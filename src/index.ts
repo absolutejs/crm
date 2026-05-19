@@ -22,8 +22,31 @@ export type {
   CRMTask,
   CRMVendor,
 } from "./types";
+export {
+  createInMemoryCRMTokenStore,
+} from "./stores";
 export type {
+  CreateInMemoryCRMTokenStoreOptions,
   CRMTokenRecord,
   CRMTokenStore,
   CRMVendorTokenContext,
 } from "./stores";
+export { createInMemoryCRMSyncQueue } from "./sync";
+export type {
+  CRMChangeEvent,
+  CRMSyncEntityPayload,
+  CRMSyncJob,
+  CRMSyncJobKind,
+  CRMSyncJobStatus,
+  CRMSyncQueue,
+  CreateInMemoryCRMSyncQueueOptions,
+  EnqueueCRMSyncJobInput,
+} from "./sync";
+export { createCRMRuntime } from "./runtime";
+export type {
+  CRMConflictResolution,
+  CRMConflictResolver,
+  CRMRuntime,
+  CRMRuntimeChangeListener,
+  CRMRuntimeOptions,
+} from "./runtime";
