@@ -97,10 +97,23 @@ export type {
   SalesforceSaveResult,
 } from "./adapters";
 export {
+  createCRMOAuthHandler,
   createCRMWebhookReceiver,
   createPermissiveCRMWebhookVerifier,
-} from "./auth/webhookReceiver";
+  DEFAULT_CRM_CONTEXT_EXTRACTORS,
+  getCRMAdapterForUser,
+} from "./auth";
 export type {
+  CRMOAuthContextExtractor,
+  CRMOAuthHandler,
+  CRMOAuthHandlerOptions,
+  CRMOAuthPersistInput,
+  CRMOAuthProfileLike,
+  CRMOAuthTokenResponseLike,
+  CRMOAuthVendorConfig,
+  CRMRefreshOAuth,
+  CRMRefreshOAuthInput,
+  CRMRefreshedToken,
   CRMWebhookHandleResult,
   CRMWebhookInvocation,
   CRMWebhookNormalizer,
@@ -108,4 +121,5 @@ export type {
   CRMWebhookReceiverOptions,
   CRMWebhookSignatureVerifier,
   CRMWebhookVendorConfig,
-} from "./auth/webhookReceiver";
+  GetCRMAdapterForUserOptions,
+} from "./auth";
