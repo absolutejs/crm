@@ -24,14 +24,29 @@ export type {
 } from "./types";
 export {
   createInMemoryCRMTokenStore,
+  createPostgresCRMTokenStore,
+  createRedisCRMTokenStore,
+  createSqliteCRMTokenStore,
 } from "./stores";
 export type {
   CreateInMemoryCRMTokenStoreOptions,
+  CreatePostgresCRMTokenStoreOptions,
+  CreateRedisCRMTokenStoreOptions,
+  CreateSqliteCRMTokenStoreOptions,
   CRMTokenRecord,
   CRMTokenStore,
   CRMVendorTokenContext,
+  PostgresQueryRunner,
+  RedisLikeClient,
+  SqliteLikeDatabase,
+  SqliteLikeStatement,
 } from "./stores";
-export { createInMemoryCRMSyncQueue } from "./sync";
+export {
+  createInMemoryCRMSyncQueue,
+  createPostgresCRMSyncQueue,
+  createRedisCRMSyncQueue,
+  createSqliteCRMSyncQueue,
+} from "./sync";
 export type {
   CRMChangeEvent,
   CRMSyncEntityPayload,
@@ -40,7 +55,11 @@ export type {
   CRMSyncJobStatus,
   CRMSyncQueue,
   CreateInMemoryCRMSyncQueueOptions,
+  CreatePostgresCRMSyncQueueOptions,
+  CreateRedisCRMSyncQueueOptions,
+  CreateSqliteCRMSyncQueueOptions,
   EnqueueCRMSyncJobInput,
+  RedisSortedSetClient,
 } from "./sync";
 export { createCRMRuntime } from "./runtime";
 export type {

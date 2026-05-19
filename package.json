@@ -80,7 +80,7 @@
   ],
   "peerDependencies": {
     "@absolutejs/auth": ">=0.22.7",
-    "citra": ">=0.25.11",
+    "citra": ">=0.27.0",
     "elysia": ">=1.4.26"
   },
   "peerDependenciesMeta": {
@@ -96,7 +96,7 @@
   "devDependencies": {
     "@absolutejs/auth": "0.22.7",
     "@types/bun": "1.3.14",
-    "citra": "0.25.11",
+    "citra": "0.27.0",
     "elysia": "1.4.28",
     "typescript": "5.9.3"
   }

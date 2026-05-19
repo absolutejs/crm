@@ -95,3 +95,12 @@ export type CRMSyncQueue = {
 
 export { createInMemoryCRMSyncQueue } from "./inMemorySyncQueue";
 export type { CreateInMemoryCRMSyncQueueOptions } from "./inMemorySyncQueue";
+export { createSqliteCRMSyncQueue } from "./sqliteSyncQueue";
+export type { CreateSqliteCRMSyncQueueOptions } from "./sqliteSyncQueue";
+export { createRedisCRMSyncQueue } from "./redisSyncQueue";
+export type {
+  CreateRedisCRMSyncQueueOptions,
+  RedisSortedSetClient,
+} from "./redisSyncQueue";
+export { createPostgresCRMSyncQueue } from "./postgresSyncQueue";
+export type { CreatePostgresCRMSyncQueueOptions } from "./postgresSyncQueue";
