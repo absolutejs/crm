@@ -43,3 +43,45 @@ export {
   verifyHubSpotWebhookV3Signature,
 } from "./hubspotWebhook";
 export type { CreateHubSpotCRMWebhookConfigOptions } from "./hubspotWebhook";
+export {
+  createSalesforceCRMWebhookConfig,
+  normalizeSalesforceWebhookPayload,
+  verifySalesforceWebhookSignature,
+} from "./salesforceWebhook";
+export type { CreateSalesforceCRMWebhookConfigOptions } from "./salesforceWebhook";
+export {
+  createPipedriveCRMWebhookConfig,
+  normalizePipedriveWebhookPayload,
+  verifyPipedriveWebhookSignature,
+} from "./pipedriveWebhook";
+export type { CreatePipedriveCRMWebhookConfigOptions } from "./pipedriveWebhook";
+export {
+  createZohoCRMWebhookConfig,
+  normalizeZohoWebhookPayload,
+  verifyZohoWebhookSignature,
+} from "./zohoWebhook";
+export type { CreateZohoCRMWebhookConfigOptions } from "./zohoWebhook";
+export {
+  createAttioCRMWebhookConfig,
+  normalizeAttioWebhookPayload,
+  verifyAttioWebhookSignature,
+} from "./attioWebhook";
+export type { CreateAttioCRMWebhookConfigOptions } from "./attioWebhook";
+export {
+  createCloseCRMWebhookConfig,
+  normalizeCloseWebhookPayload,
+  verifyCloseWebhookSignature,
+} from "./closeWebhook";
+export type { CreateCloseCRMWebhookConfigOptions } from "./closeWebhook";
+export {
+  createMondayCRMWebhookConfig,
+  normalizeMondayWebhookPayload,
+  verifyMondayWebhookSignature,
+} from "./mondayWebhook";
+export type { CreateMondayCRMWebhookConfigOptions } from "./mondayWebhook";
+export {
+  createGoHighLevelCRMWebhookConfig,
+  normalizeGoHighLevelWebhookPayload,
+  verifyGoHighLevelWebhookSignature,
+} from "./gohighlevelWebhook";
+export type { CreateGoHighLevelCRMWebhookConfigOptions } from "./gohighlevelWebhook";
