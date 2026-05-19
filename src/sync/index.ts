@@ -104,3 +104,17 @@ export type {
 } from "./redisSyncQueue";
 export { createPostgresCRMSyncQueue } from "./postgresSyncQueue";
 export type { CreatePostgresCRMSyncQueueOptions } from "./postgresSyncQueue";
+export {
+  createCRMReconciler,
+  lastWriteWinsReconcileResolver,
+  remoteWinsReconcileResolver,
+} from "./reconciler";
+export type {
+  CreateCRMReconcilerOptions,
+  CRMReconcileConflictResolution,
+  CRMReconcileConflictResolver,
+  CRMReconcileConflictResolverInput,
+  CRMReconcileResult,
+  CRMReconciler,
+  CRMReconcilerEvent,
+} from "./reconciler";

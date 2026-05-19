@@ -45,3 +45,12 @@ export type {
   CreatePostgresCRMTokenStoreOptions,
   PostgresQueryRunner,
 } from "./postgresTokenStore";
+export {
+  createInMemoryCRMLocalEntityStore,
+} from "./localEntityStore";
+export type {
+  CreateInMemoryCRMLocalEntityStoreOptions,
+  CRMLocalEntityOrigin,
+  CRMLocalEntityRecord,
+  CRMLocalEntityStore,
+} from "./localEntityStore";

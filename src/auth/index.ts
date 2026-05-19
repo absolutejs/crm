@@ -37,3 +37,9 @@ export type {
   CRMWebhookSignatureVerifier,
   CRMWebhookVendorConfig,
 } from "./webhookReceiver";
+export {
+  createHubSpotCRMWebhookConfig,
+  normalizeHubSpotWebhookPayload,
+  verifyHubSpotWebhookV3Signature,
+} from "./hubspotWebhook";
+export type { CreateHubSpotCRMWebhookConfigOptions } from "./hubspotWebhook";

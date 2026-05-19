@@ -6,12 +6,20 @@ import type {
   CRMLead,
   CRMVendor,
 } from "./types";
-import type { CRMTokenRecord, CRMTokenStore } from "./stores";
+import type {
+  CRMLocalEntityRecord,
+  CRMLocalEntityStore,
+  CRMTokenRecord,
+  CRMTokenStore,
+} from "./stores";
 import type {
   CRMChangeEvent,
+  CRMReconcileConflictResolver,
+  CRMReconciler,
   CRMSyncJob,
   CRMSyncQueue,
 } from "./sync";
+import { createCRMReconciler } from "./sync";
 
 export type CRMConflictResolution<T> =
   | { winner: "local"; entity: T }
@@ -31,6 +39,9 @@ export type CRMRuntimeOptions = {
   adapters: Partial<Record<CRMVendor, CRMAdapterFactory>>;
   conflictResolver?: CRMConflictResolver;
   now?: () => number;
+  localEntityStore?: CRMLocalEntityStore;
+  reconcileResolver?: CRMReconcileConflictResolver;
+  echoSuppressionWindowMs?: number;
 };
 
 export type CRMRuntimeChangeListener = (
@@ -125,6 +136,39 @@ export const createCRMRuntime = (options: CRMRuntimeOptions) => {
     }
   });
 
+  const reconciler: CRMReconciler | null = options.localEntityStore
+    ? createCRMReconciler({
+        localStore: options.localEntityStore,
+        syncQueue: options.syncQueue,
+        ...(options.reconcileResolver !== undefined
+          ? { conflictResolver: options.reconcileResolver }
+          : {}),
+        ...(options.echoSuppressionWindowMs !== undefined
+          ? { echoSuppressionWindowMs: options.echoSuppressionWindowMs }
+          : {}),
+        now,
+      })
+    : null;
+
+  const writeLocalEntityFromOutbound = async (
+    vendor: CRMVendor,
+    entityType: CRMLocalEntityRecord["entityType"],
+    entityId: string,
+    data: Record<string, unknown>,
+  ) => {
+    if (!options.localEntityStore) return;
+    const record: CRMLocalEntityRecord = {
+      data,
+      entityId,
+      entityType,
+      localUpdatedAt: now(),
+      origin: "app",
+      vendor,
+      vendorUpdatedAt: now(),
+    };
+    await options.localEntityStore.put(record);
+  };
+
   return {
     adapterFor,
     async createContact(
@@ -134,6 +178,12 @@ export const createCRMRuntime = (options: CRMRuntimeOptions) => {
     ): Promise<CRMContact> {
       const adapter = await adapterFor(userId, vendor);
       const contact = await adapter.createContact(input);
+      await writeLocalEntityFromOutbound(
+        vendor,
+        "contact",
+        contact.id,
+        contact as unknown as Record<string, unknown>,
+      );
       return contact;
     },
     async createDeal(
@@ -142,7 +192,14 @@ export const createCRMRuntime = (options: CRMRuntimeOptions) => {
       input: Omit<CRMDeal, "id" | "vendor">,
     ): Promise<CRMDeal> {
       const adapter = await adapterFor(userId, vendor);
-      return adapter.createDeal(input);
+      const deal = await adapter.createDeal(input);
+      await writeLocalEntityFromOutbound(
+        vendor,
+        "deal",
+        deal.id,
+        deal as unknown as Record<string, unknown>,
+      );
+      return deal;
     },
     async createLead(
       userId: string,
@@ -150,7 +207,14 @@ export const createCRMRuntime = (options: CRMRuntimeOptions) => {
       input: Omit<CRMLead, "id" | "vendor">,
     ): Promise<CRMLead> {
       const adapter = await adapterFor(userId, vendor);
-      return adapter.createLead(input);
+      const lead = await adapter.createLead(input);
+      await writeLocalEntityFromOutbound(
+        vendor,
+        "lead",
+        lead.id,
+        lead as unknown as Record<string, unknown>,
+      );
+      return lead;
     },
     async enqueueOutboundCreate(
       userId: string,
@@ -167,10 +231,26 @@ export const createCRMRuntime = (options: CRMRuntimeOptions) => {
         vendor,
       });
     },
+    get isBidirectional() {
+      return options.localEntityStore !== undefined;
+    },
     invalidateAdapter,
+    localEntityStore: options.localEntityStore ?? null,
+    async processInboundChanges(limit?: number) {
+      if (!reconciler) {
+        throw new Error(
+          "CRM runtime is not configured for inbound sync — pass localEntityStore in createCRMRuntime options to activate bidirectional sync",
+        );
+      }
+      return reconciler.processPending(limit);
+    },
+    reconciler,
     async recordInboundChange(event: CRMChangeEvent) {
       await options.syncQueue.recordChange(event);
       notifyInbound(event);
+      if (reconciler) {
+        await reconciler.reconcileChange(event);
+      }
     },
     resolver,
     subscribe(listener: CRMRuntimeChangeListener) {

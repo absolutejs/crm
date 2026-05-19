@@ -23,16 +23,21 @@ export type {
   CRMVendor,
 } from "./types";
 export {
+  createInMemoryCRMLocalEntityStore,
   createInMemoryCRMTokenStore,
   createPostgresCRMTokenStore,
   createRedisCRMTokenStore,
   createSqliteCRMTokenStore,
 } from "./stores";
 export type {
+  CreateInMemoryCRMLocalEntityStoreOptions,
   CreateInMemoryCRMTokenStoreOptions,
   CreatePostgresCRMTokenStoreOptions,
   CreateRedisCRMTokenStoreOptions,
   CreateSqliteCRMTokenStoreOptions,
+  CRMLocalEntityOrigin,
+  CRMLocalEntityRecord,
+  CRMLocalEntityStore,
   CRMTokenRecord,
   CRMTokenStore,
   CRMVendorTokenContext,
@@ -42,13 +47,23 @@ export type {
   SqliteLikeStatement,
 } from "./stores";
 export {
+  createCRMReconciler,
   createInMemoryCRMSyncQueue,
   createPostgresCRMSyncQueue,
   createRedisCRMSyncQueue,
   createSqliteCRMSyncQueue,
+  lastWriteWinsReconcileResolver,
+  remoteWinsReconcileResolver,
 } from "./sync";
 export type {
+  CreateCRMReconcilerOptions,
   CRMChangeEvent,
+  CRMReconcileConflictResolution,
+  CRMReconcileConflictResolver,
+  CRMReconcileConflictResolverInput,
+  CRMReconcileResult,
+  CRMReconciler,
+  CRMReconcilerEvent,
   CRMSyncEntityPayload,
   CRMSyncJob,
   CRMSyncJobKind,
@@ -110,10 +125,14 @@ export type {
 export {
   createCRMOAuthHandler,
   createCRMWebhookReceiver,
+  createHubSpotCRMWebhookConfig,
   createPermissiveCRMWebhookVerifier,
   DEFAULT_CRM_CONTEXT_EXTRACTORS,
   getCRMAdapterForUser,
+  normalizeHubSpotWebhookPayload,
+  verifyHubSpotWebhookV3Signature,
 } from "./auth";
+export type { CreateHubSpotCRMWebhookConfigOptions } from "./auth";
 export type {
   CRMOAuthContextExtractor,
   CRMOAuthHandler,
