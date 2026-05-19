@@ -97,6 +97,17 @@ export type {
   SalesforceSaveResult,
 } from "./adapters";
 export {
+  createVoiceCRMBridge,
+  createVoiceLeadCapturePathway,
+  DEFAULT_VOICE_LEAD_CAPTURE_OPTIONAL_FIELDS,
+  DEFAULT_VOICE_LEAD_CAPTURE_REQUIRED_FIELDS,
+} from "./voice";
+export type {
+  CreateVoiceCRMBridgeOptions,
+  CreateVoiceLeadCapturePathwayOptions,
+  VoiceLeadCaptureField,
+} from "./voice";
+export {
   createCRMOAuthHandler,
   createCRMWebhookReceiver,
   createPermissiveCRMWebhookVerifier,

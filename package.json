@@ -1,6 +1,6 @@
 {
   "name": "@absolutejs/crm",
-  "version": "0.0.4-alpha.0",
+  "version": "0.0.5-alpha.0",
   "description": "Multi-vendor CRM adapter framework for AbsoluteJS",
   "repository": {
     "type": "git",
@@ -40,10 +40,14 @@
   ],
   "peerDependencies": {
     "@absolutejs/auth": ">=0.22.7",
+    "@absolutejs/voice": ">=0.0.22-beta.515",
     "citra": ">=0.27.0",
     "elysia": ">=1.4.26"
   },
   "peerDependenciesMeta": {
+    "@absolutejs/voice": {
+      "optional": true
+    },
     "elysia": {
       "optional": true
     }
@@ -55,6 +59,7 @@
   },
   "devDependencies": {
     "@absolutejs/auth": "0.22.7",
+    "@absolutejs/voice": "0.0.22-beta.515",
     "@types/bun": "1.3.14",
     "citra": "0.27.0",
     "elysia": "1.4.28",
