@@ -70,6 +70,19 @@ export type {
   CRMRuntimeOptions,
 } from "./runtime";
 export {
+  createSalesforceCRMAdapter,
+  mapSalesforceAccountRow,
+  mapSalesforceContactRow,
+  mapSalesforceDealRow,
+  mapSalesforceLeadRow,
+} from "./adapters";
+export type {
+  CreateSalesforceCRMAdapterOptions,
+  SalesforceConnectionLike,
+  SalesforceQueryResult,
+  SalesforceSaveResult,
+} from "./adapters";
+export {
   createCRMWebhookReceiver,
   createPermissiveCRMWebhookVerifier,
 } from "./auth/webhookReceiver";
