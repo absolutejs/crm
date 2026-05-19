@@ -1,0 +1,103 @@
+{
+  "name": "@absolutejs/crm",
+  "version": "0.0.1-alpha.0",
+  "description": "Multi-vendor CRM adapter framework for AbsoluteJS",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/absolutejs/crm.git"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "license": "CC BY-NC 4.0",
+  "author": "Alex Kahn",
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./adapters/salesforce": {
+      "import": "./dist/adapters/salesforce.js",
+      "types": "./dist/adapters/salesforce.d.ts"
+    },
+    "./adapters/hubspot": {
+      "import": "./dist/adapters/hubspot.js",
+      "types": "./dist/adapters/hubspot.d.ts"
+    },
+    "./adapters/pipedrive": {
+      "import": "./dist/adapters/pipedrive.js",
+      "types": "./dist/adapters/pipedrive.d.ts"
+    },
+    "./adapters/zoho": {
+      "import": "./dist/adapters/zoho.js",
+      "types": "./dist/adapters/zoho.d.ts"
+    },
+    "./adapters/attio": {
+      "import": "./dist/adapters/attio.js",
+      "types": "./dist/adapters/attio.d.ts"
+    },
+    "./adapters/close": {
+      "import": "./dist/adapters/close.js",
+      "types": "./dist/adapters/close.d.ts"
+    },
+    "./adapters/monday": {
+      "import": "./dist/adapters/monday.js",
+      "types": "./dist/adapters/monday.d.ts"
+    },
+    "./adapters/gohighlevel": {
+      "import": "./dist/adapters/gohighlevel.js",
+      "types": "./dist/adapters/gohighlevel.d.ts"
+    },
+    "./stores": {
+      "import": "./dist/stores/index.js",
+      "types": "./dist/stores/index.d.ts"
+    },
+    "./voice": {
+      "import": "./dist/voice/index.js",
+      "types": "./dist/voice/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "rm -rf dist && bun build src/index.ts --outdir dist --target=bun --external elysia --external citra --external @absolutejs/auth --external @absolutejs/voice --external jsforce --external @hubspot/api-client --external @mondaydotcomorg/api && tsc --emitDeclarationOnly --project tsconfig.json",
+    "test": "bun test",
+    "typecheck": "bun run tsc --noEmit",
+    "lint": "echo 'lint not yet wired'",
+    "format": "prettier --write \"./**/*.{js,ts,json}\""
+  },
+  "keywords": [
+    "crm",
+    "salesforce",
+    "hubspot",
+    "pipedrive",
+    "zoho",
+    "absolutejs",
+    "elysia"
+  ],
+  "peerDependencies": {
+    "@absolutejs/auth": ">=0.22.7",
+    "citra": ">=0.25.11",
+    "elysia": ">=1.4.26"
+  },
+  "peerDependenciesMeta": {
+    "elysia": {
+      "optional": true
+    }
+  },
+  "optionalDependencies": {
+    "@hubspot/api-client": "^12.0.0",
+    "@mondaydotcomorg/api": "^9.0.0",
+    "jsforce": "^3.0.0"
+  },
+  "devDependencies": {
+    "@absolutejs/auth": "0.22.7",
+    "@types/bun": "1.3.14",
+    "citra": "0.25.11",
+    "elysia": "1.4.28",
+    "typescript": "5.9.3"
+  }
+}
