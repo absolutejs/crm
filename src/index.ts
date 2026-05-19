@@ -50,3 +50,16 @@ export type {
   CRMRuntimeChangeListener,
   CRMRuntimeOptions,
 } from "./runtime";
+export {
+  createCRMWebhookReceiver,
+  createPermissiveCRMWebhookVerifier,
+} from "./auth/webhookReceiver";
+export type {
+  CRMWebhookHandleResult,
+  CRMWebhookInvocation,
+  CRMWebhookNormalizer,
+  CRMWebhookReceiver,
+  CRMWebhookReceiverOptions,
+  CRMWebhookSignatureVerifier,
+  CRMWebhookVendorConfig,
+} from "./auth/webhookReceiver";
