@@ -70,14 +70,28 @@ export type {
   CRMRuntimeOptions,
 } from "./runtime";
 export {
+  createHubSpotCRMAdapter,
   createSalesforceCRMAdapter,
+  HUBSPOT_CONTACT_PROPERTY_NAMES,
+  HUBSPOT_DEAL_PROPERTY_NAMES,
+  mapHubSpotContactObject,
+  mapHubSpotDealObject,
   mapSalesforceAccountRow,
   mapSalesforceContactRow,
   mapSalesforceDealRow,
   mapSalesforceLeadRow,
 } from "./adapters";
 export type {
+  CreateHubSpotCRMAdapterOptions,
   CreateSalesforceCRMAdapterOptions,
+  HubSpotBasicApi,
+  HubSpotClientLike,
+  HubSpotObjectResponse,
+  HubSpotPipeline,
+  HubSpotPipelineStage,
+  HubSpotPipelinesApi,
+  HubSpotSearchApi,
+  HubSpotSearchResponse,
   SalesforceConnectionLike,
   SalesforceQueryResult,
   SalesforceSaveResult,
