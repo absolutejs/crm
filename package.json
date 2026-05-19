@@ -20,46 +20,6 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
-    },
-    "./adapters/salesforce": {
-      "import": "./dist/adapters/salesforce.js",
-      "types": "./dist/adapters/salesforce.d.ts"
-    },
-    "./adapters/hubspot": {
-      "import": "./dist/adapters/hubspot.js",
-      "types": "./dist/adapters/hubspot.d.ts"
-    },
-    "./adapters/pipedrive": {
-      "import": "./dist/adapters/pipedrive.js",
-      "types": "./dist/adapters/pipedrive.d.ts"
-    },
-    "./adapters/zoho": {
-      "import": "./dist/adapters/zoho.js",
-      "types": "./dist/adapters/zoho.d.ts"
-    },
-    "./adapters/attio": {
-      "import": "./dist/adapters/attio.js",
-      "types": "./dist/adapters/attio.d.ts"
-    },
-    "./adapters/close": {
-      "import": "./dist/adapters/close.js",
-      "types": "./dist/adapters/close.d.ts"
-    },
-    "./adapters/monday": {
-      "import": "./dist/adapters/monday.js",
-      "types": "./dist/adapters/monday.d.ts"
-    },
-    "./adapters/gohighlevel": {
-      "import": "./dist/adapters/gohighlevel.js",
-      "types": "./dist/adapters/gohighlevel.d.ts"
-    },
-    "./stores": {
-      "import": "./dist/stores/index.js",
-      "types": "./dist/stores/index.d.ts"
-    },
-    "./voice": {
-      "import": "./dist/voice/index.js",
-      "types": "./dist/voice/index.d.ts"
     }
   },
   "scripts": {
