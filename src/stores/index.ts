@@ -54,3 +54,9 @@ export type {
   CRMLocalEntityRecord,
   CRMLocalEntityStore,
 } from "./localEntityStore";
+export { createSqliteCRMLocalEntityStore } from "./sqliteLocalEntityStore";
+export type { CreateSqliteCRMLocalEntityStoreOptions } from "./sqliteLocalEntityStore";
+export { createPostgresCRMLocalEntityStore } from "./postgresLocalEntityStore";
+export type { CreatePostgresCRMLocalEntityStoreOptions } from "./postgresLocalEntityStore";
+export { createRedisCRMLocalEntityStore } from "./redisLocalEntityStore";
+export type { CreateRedisCRMLocalEntityStoreOptions } from "./redisLocalEntityStore";

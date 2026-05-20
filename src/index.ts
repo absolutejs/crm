@@ -25,15 +25,21 @@ export type {
 export {
   createInMemoryCRMLocalEntityStore,
   createInMemoryCRMTokenStore,
+  createPostgresCRMLocalEntityStore,
   createPostgresCRMTokenStore,
+  createRedisCRMLocalEntityStore,
   createRedisCRMTokenStore,
+  createSqliteCRMLocalEntityStore,
   createSqliteCRMTokenStore,
 } from "./stores";
 export type {
   CreateInMemoryCRMLocalEntityStoreOptions,
   CreateInMemoryCRMTokenStoreOptions,
+  CreatePostgresCRMLocalEntityStoreOptions,
   CreatePostgresCRMTokenStoreOptions,
+  CreateRedisCRMLocalEntityStoreOptions,
   CreateRedisCRMTokenStoreOptions,
+  CreateSqliteCRMLocalEntityStoreOptions,
   CreateSqliteCRMTokenStoreOptions,
   CRMLocalEntityOrigin,
   CRMLocalEntityRecord,
