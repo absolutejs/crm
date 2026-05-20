@@ -1,4 +1,8 @@
-import type { CRMTokenStore, CRMTokenRecord } from "../stores";
+import type {
+  CRMTokenStore,
+  CRMTokenRecord,
+  CRMVendorTokenContext,
+} from "../stores";
 import type {
   CRMAdapter,
   CRMAdapterFactory,
@@ -16,6 +20,7 @@ export type CRMRefreshedToken = {
   accessToken: string;
   refreshToken?: string;
   expiresAt?: number;
+  context?: CRMVendorTokenContext;
 };
 
 export type CRMRefreshOAuth = (
@@ -66,10 +71,18 @@ export const getCRMAdapterForUser = async (
       refreshToken: record.refreshToken,
       vendor: options.vendor,
     });
+    const mergedContext: CRMVendorTokenContext | undefined =
+      refreshed.context || record.context
+        ? {
+            ...(record.context ?? {}),
+            ...(refreshed.context ?? {}),
+          }
+        : undefined;
     record = {
       ...record,
       accessToken: refreshed.accessToken,
       updatedAt: now(),
+      ...(mergedContext !== undefined ? { context: mergedContext } : {}),
       ...(refreshed.refreshToken !== undefined
         ? { refreshToken: refreshed.refreshToken }
         : {}),

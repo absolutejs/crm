@@ -25,6 +25,22 @@ export type {
   GetCRMAdapterForUserOptions,
 } from "./getCRMAdapterForUser";
 export {
+  createAttioCRMRefreshOAuth,
+  createCloseCRMRefreshOAuth,
+  createCRMRefreshOAuth,
+  createGoHighLevelCRMRefreshOAuth,
+  createHubSpotCRMRefreshOAuth,
+  createMondayCRMRefreshOAuth,
+  createPipedriveCRMRefreshOAuth,
+  createSalesforceCRMRefreshOAuth,
+  createZohoCRMRefreshOAuth,
+} from "./refreshHelpers";
+export type {
+  CRMCitraOAuth2ClientLike,
+  CRMMultiVendorRefreshOptions,
+  CreateSingleVendorRefreshOAuthOptions,
+} from "./refreshHelpers";
+export {
   createCRMWebhookReceiver,
   createPermissiveCRMWebhookVerifier,
 } from "./webhookReceiver";
