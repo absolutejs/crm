@@ -15,6 +15,7 @@ type HubSpotWebhookEntry = {
   propertyValue?: unknown;
   occurredAt?: number;
   changeFlag?: string;
+  portalId?: number | string;
 };
 
 const subscriptionToEntityType = (
@@ -83,6 +84,9 @@ export const normalizeHubSpotWebhookPayload: CRMWebhookNormalizer = ({
       ...(entry.changeFlag !== undefined ? { changeFlag: entry.changeFlag } : {}),
     };
     events.push({
+      ...(entry.portalId !== undefined
+        ? { accountRef: String(entry.portalId) }
+        : {}),
       entityId,
       entityType,
       id: entry.eventId !== undefined ? `hs:${entry.eventId}` : `hs:${entityId}:${entry.occurredAt ?? receivedAtMs}`,

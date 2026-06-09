@@ -57,6 +57,10 @@ export type CRMChangeEvent = {
   id: string;
   vendor: CRMVendor;
   userId?: string;
+  // The vendor-side account/tenant the change belongs to (HubSpot portalId,
+  // Salesforce instance, etc.). Essential for routing a webhook to the right
+  // installer in a multi-tenant app.
+  accountRef?: string;
   entityType: CRMEntityType;
   entityId: string;
   op: "create" | "update" | "delete";
