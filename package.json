@@ -6,6 +6,10 @@
     "type": "git",
     "url": "https://github.com/absolutejs/crm.git"
   },
+  "homepage": "https://github.com/absolutejs/crm",
+  "bugs": {
+    "url": "https://github.com/absolutejs/crm/issues"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "license": "BSL-1.1",
