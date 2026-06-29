@@ -80,7 +80,17 @@ export type EnqueueCRMSyncJobInput = Omit<
 
 export type CRMSyncQueue = {
   enqueue(input: EnqueueCRMSyncJobInput): Promise<CRMSyncJob>;
-  claimNext(at?: number): Promise<CRMSyncJob | null>;
+  /**
+   * Lease the next due `pending` job, transitioning it to `in-flight` and
+   * incrementing `attempts`. When `kinds` is supplied, only jobs whose `kind`
+   * is in the list are eligible — this lets independent drainers (the inbound
+   * reconciler vs. the outbound worker) share one queue without stealing each
+   * other's jobs. Omitting `kinds` leases any kind (back-compat).
+   */
+  claimNext(
+    at?: number,
+    kinds?: readonly CRMSyncJobKind[],
+  ): Promise<CRMSyncJob | null>;
   markCompleted(jobId: string, resultEntityId?: string): Promise<void>;
   markFailed(
     jobId: string,
@@ -113,6 +123,14 @@ export {
   lastWriteWinsReconcileResolver,
   remoteWinsReconcileResolver,
 } from "./reconciler";
+export { createCRMOutboundWorker, OUTBOUND_JOB_KINDS } from "./outbound";
+export type {
+  CreateCRMOutboundWorkerOptions,
+  CRMOutboundLocalMirror,
+  CRMOutboundResult,
+  CRMOutboundWorker,
+  CRMOutboundWorkerEvent,
+} from "./outbound";
 export type {
   CreateCRMReconcilerOptions,
   CRMReconcileConflictResolution,

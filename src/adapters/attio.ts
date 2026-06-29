@@ -1,11 +1,17 @@
 import type {
+  CRMAccount,
+  CRMActivity,
   CRMAdapter,
   CRMAdapterCapabilities,
   CRMAdapterFactoryInput,
   CRMContact,
   CRMDeal,
   CRMLead,
+  CRMListOptions,
+  CRMListResult,
+  CRMNote,
   CRMPipeline,
+  CRMTask,
 } from "../types";
 import {
   assertHttpOk,
@@ -17,12 +23,24 @@ const VENDOR = "attio" as const;
 
 const ATTIO_CAPABILITIES: CRMAdapterCapabilities = {
   preferredIdField: "id",
+  supportsAccounts: true,
   supportsBulkUpsert: true,
   supportsCustomFields: true,
+  supportsDelete: true,
+  supportsLeadConversion: false,
   supportsLeads: false,
+  supportsListing: true,
   supportsPipelines: false,
   supportsWebhooks: true,
   syncDirection: "outbound-only",
+};
+
+const DEFAULT_LIST_LIMIT = 50;
+
+const parseOffset = (cursor: string | undefined): number => {
+  if (cursor === undefined) return 0;
+  const parsed = Number(cursor);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
 };
 
 type AttioValue<T = unknown> = { value: T }[];
@@ -46,6 +64,30 @@ type AttioDealRecord = {
     stage?: AttioValue<string>;
     close_date?: AttioValue<{ value: string }>;
   };
+};
+
+type AttioCompanyRecord = {
+  id: { record_id: string };
+  values: {
+    name?: AttioValue<string>;
+    domains?: AttioValue<{ domain: string }>;
+  };
+};
+
+type AttioNoteRecord = {
+  id: { note_id: string };
+  parent_object?: string;
+  parent_record_id?: string;
+  content_plaintext?: string;
+  created_at?: string;
+};
+
+type AttioTaskRecord = {
+  id: { task_id: string };
+  content_plaintext?: string;
+  deadline_at?: string | null;
+  is_completed?: boolean;
+  linked_records?: { target_object_id?: string; target_record_id: string }[];
 };
 
 export type CreateAttioCRMAdapterOptions = CRMAdapterFactoryInput & {
@@ -105,6 +147,86 @@ const mapDeal = (record: AttioDealRecord): CRMDeal => {
   };
 };
 
+const mapPersonAsLead = (record: AttioPersonRecord): CRMLead => {
+  const nameValue = firstValue(record.values.name);
+  const emails = (record.values.email_addresses ?? []).map((e) => ({
+    address: typeof e.value === "string" ? e.value : String(e.value),
+    primary: false,
+  }));
+  if (emails[0]) emails[0].primary = true;
+  const phones = (record.values.phone_numbers ?? []).map((p) => ({
+    label: "work" as const,
+    number: typeof p.value === "string" ? p.value : String(p.value),
+  }));
+  return {
+    emails,
+    id: record.id.record_id,
+    phones,
+    vendor: VENDOR,
+    ...(nameValue?.first_name ? { firstName: nameValue.first_name } : {}),
+    ...(nameValue?.last_name ? { lastName: nameValue.last_name } : {}),
+    ...(firstValue(record.values.job_title)
+      ? { jobTitle: firstValue(record.values.job_title) }
+      : {}),
+  };
+};
+
+const mapCompany = (record: AttioCompanyRecord): CRMAccount => {
+  const domain = firstValue(record.values.domains);
+  return {
+    id: record.id.record_id,
+    name: String(firstValue(record.values.name) ?? ""),
+    vendor: VENDOR,
+    ...(domain?.domain ? { domain: domain.domain } : {}),
+  };
+};
+
+const noteParentLink = (
+  record: AttioNoteRecord,
+): { contactIds: string[] } | { accountId: string } | Record<string, never> => {
+  if (record.parent_record_id === undefined) return {};
+  if (record.parent_object === "people")
+    return { contactIds: [record.parent_record_id] };
+  if (record.parent_object === "companies")
+    return { accountId: record.parent_record_id };
+  return {};
+};
+
+const mapNote = (record: AttioNoteRecord): CRMNote => ({
+  body: record.content_plaintext ?? "",
+  id: record.id.note_id,
+  vendor: VENDOR,
+  ...noteParentLink(record),
+  ...(record.created_at
+    ? { createdAt: new Date(record.created_at).getTime() }
+    : {}),
+});
+
+const mapNoteAsActivity = (record: AttioNoteRecord): CRMActivity => ({
+  body: record.content_plaintext ?? "",
+  id: record.id.note_id,
+  occurredAt: record.created_at
+    ? new Date(record.created_at).getTime()
+    : Date.now(),
+  type: "note",
+  vendor: VENDOR,
+  ...noteParentLink(record),
+});
+
+const mapTask = (record: AttioTaskRecord): CRMTask => {
+  const linked = (record.linked_records ?? []).map((l) => l.target_record_id);
+  return {
+    id: record.id.task_id,
+    status: record.is_completed ? "completed" : "pending",
+    subject: record.content_plaintext ?? "",
+    vendor: VENDOR,
+    ...(linked.length > 0 ? { contactIds: linked } : {}),
+    ...(record.deadline_at
+      ? { dueAt: new Date(record.deadline_at).getTime() }
+      : {}),
+  };
+};
+
 export const createAttioCRMAdapter = async (
   input: CreateAttioCRMAdapterOptions,
 ): Promise<CRMAdapter> => {
@@ -139,6 +261,29 @@ export const createAttioCRMAdapter = async (
     );
     return { record_id: response.data.id.record_id };
   };
+
+  const queryRecords = async <R>(
+    object: string,
+    opts: CRMListOptions | undefined,
+  ): Promise<{ records: R[]; limit: number; offset: number }> => {
+    const limit = opts?.limit ?? DEFAULT_LIST_LIMIT;
+    const offset = parseOffset(opts?.cursor);
+    const result = await request<{ data: R[] }>(
+      "POST",
+      `/objects/${object}/records/query`,
+      { limit, offset },
+    );
+    return { limit, offset, records: result.data };
+  };
+
+  const nextCursorFor = (
+    records: unknown[],
+    limit: number,
+    offset: number,
+  ): { nextCursor: string } | Record<string, never> =>
+    records.length === limit
+      ? { nextCursor: String(offset + records.length) }
+      : {};
 
   return {
     async addNote(noteInput) {
@@ -178,6 +323,16 @@ export const createAttioCRMAdapter = async (
       };
     },
     capabilities: ATTIO_CAPABILITIES,
+    async createAccount(accountInput) {
+      const values: Record<string, unknown> = { name: accountInput.name };
+      if (accountInput.domain) values.domains = [accountInput.domain];
+      const response = await request<{ data: AttioCompanyRecord }>(
+        "POST",
+        "/objects/companies/records",
+        { data: { values } },
+      );
+      return { ...accountInput, id: response.data.id.record_id, vendor: VENDOR };
+    },
     async createContact(contactInput) {
       const values: Record<string, unknown> = {
         email_addresses: contactInput.emails.map((e) => e.address),
@@ -274,12 +429,115 @@ export const createAttioCRMAdapter = async (
       );
       return { ...taskInput, id: response.data.id.task_id, vendor: VENDOR };
     },
+    async deleteAccount(id) {
+      await request<unknown>("DELETE", `/objects/companies/records/${id}`);
+    },
+    async deleteContact(id) {
+      await request<unknown>("DELETE", `/objects/people/records/${id}`);
+    },
+    async deleteDeal(id) {
+      await request<unknown>("DELETE", `/objects/deals/records/${id}`);
+    },
+    async deleteLead(id) {
+      await request<unknown>("DELETE", `/objects/people/records/${id}`);
+    },
+    async deleteNote(id) {
+      await request<unknown>("DELETE", `/notes/${id}`);
+    },
+    async deleteTask(id) {
+      await request<unknown>("DELETE", `/tasks/${id}`);
+    },
+    async getAccount(id) {
+      const result = await request<{ data: AttioCompanyRecord }>(
+        "GET",
+        `/objects/companies/records/${id}`,
+      );
+      return mapCompany(result.data);
+    },
+    async getActivity(id) {
+      const result = await request<{ data: AttioNoteRecord }>(
+        "GET",
+        `/notes/${id}`,
+      );
+      return mapNoteAsActivity(result.data);
+    },
     async getContact(id) {
       const result = await request<{ data: AttioPersonRecord }>(
         "GET",
         `/objects/people/records/${id}`,
       );
       return mapPerson(result.data);
+    },
+    async getDeal(id) {
+      const result = await request<{ data: AttioDealRecord }>(
+        "GET",
+        `/objects/deals/records/${id}`,
+      );
+      return mapDeal(result.data);
+    },
+    async getLead(id) {
+      const result = await request<{ data: AttioPersonRecord }>(
+        "GET",
+        `/objects/people/records/${id}`,
+      );
+      return mapPersonAsLead(result.data);
+    },
+    async getNote(id) {
+      const result = await request<{ data: AttioNoteRecord }>(
+        "GET",
+        `/notes/${id}`,
+      );
+      return mapNote(result.data);
+    },
+    async getPipeline(): Promise<CRMPipeline | null> {
+      return null;
+    },
+    async getTask(id) {
+      const result = await request<{ data: AttioTaskRecord }>(
+        "GET",
+        `/tasks/${id}`,
+      );
+      return mapTask(result.data);
+    },
+    async listAccounts(opts): Promise<CRMListResult<CRMAccount>> {
+      const { limit, offset, records } = await queryRecords<AttioCompanyRecord>(
+        "companies",
+        opts,
+      );
+      return {
+        items: records.map(mapCompany),
+        ...nextCursorFor(records, limit, offset),
+      };
+    },
+    async listContacts(opts): Promise<CRMListResult<CRMContact>> {
+      const { limit, offset, records } = await queryRecords<AttioPersonRecord>(
+        "people",
+        opts,
+      );
+      return {
+        items: records.map(mapPerson),
+        ...nextCursorFor(records, limit, offset),
+      };
+    },
+    async listDeals(opts): Promise<CRMListResult<CRMDeal>> {
+      const { limit, offset, records } = await queryRecords<AttioDealRecord>(
+        "deals",
+        opts,
+      );
+      return {
+        items: records.map(mapDeal),
+        ...nextCursorFor(records, limit, offset),
+      };
+    },
+    async listLeads(opts): Promise<CRMListResult<CRMLead>> {
+      const { limit, offset, records } = await queryRecords<AttioPersonRecord>(
+        "people",
+        opts,
+      );
+      return {
+        items: records.map(mapPersonAsLead),
+        ...nextCursorFor(records, limit, offset),
+      };
     },
     async listPipelines(): Promise<CRMPipeline[]> {
       return [];
@@ -391,6 +649,77 @@ export const createAttioCRMAdapter = async (
         { data: { values } },
       );
       return mapDeal(result.data);
+    },
+    async updateAccount(id, patch) {
+      const values: Record<string, unknown> = {};
+      if (patch.name !== undefined) values.name = patch.name;
+      if (patch.domain !== undefined) values.domains = [patch.domain];
+      const result = await request<{ data: AttioCompanyRecord }>(
+        "PATCH",
+        `/objects/companies/records/${id}`,
+        { data: { values } },
+      );
+      return mapCompany(result.data);
+    },
+    async updateActivity() {
+      throw new Error(
+        "Attio stores activities as immutable notes; there is no content update endpoint, so updateActivity is unsupported",
+      );
+    },
+    async updateLead(id, patch) {
+      const values: Record<string, unknown> = {};
+      if (patch.firstName !== undefined || patch.lastName !== undefined) {
+        values.name = [
+          {
+            first_name: patch.firstName,
+            full_name: [patch.firstName, patch.lastName]
+              .filter(Boolean)
+              .join(" "),
+            last_name: patch.lastName,
+          },
+        ];
+      }
+      if (patch.emails) {
+        values.email_addresses = patch.emails.map((e) => e.address);
+      }
+      if (patch.phones) {
+        values.phone_numbers = patch.phones.map((p) => p.number);
+      }
+      if (patch.jobTitle !== undefined) values.job_title = patch.jobTitle;
+      const result = await request<{ data: AttioPersonRecord }>(
+        "PATCH",
+        `/objects/people/records/${id}`,
+        { data: { values } },
+      );
+      return mapPersonAsLead(result.data);
+    },
+    async updateNote() {
+      throw new Error(
+        "Attio notes are immutable via the API (no update endpoint), so updateNote is unsupported",
+      );
+    },
+    async updateTask(id, patch) {
+      // Attio only permits updating deadline_at, is_completed, and
+      // linked_records on a task (content is immutable).
+      const data: Record<string, unknown> = {};
+      if (patch.dueAt !== undefined) {
+        data.deadline_at = new Date(patch.dueAt).toISOString();
+      }
+      if (patch.status !== undefined) {
+        data.is_completed = patch.status === "completed";
+      }
+      if (patch.contactIds !== undefined) {
+        data.linked_records = patch.contactIds.map((contactId) => ({
+          target_object: "people",
+          target_record_id: contactId,
+        }));
+      }
+      const result = await request<{ data: AttioTaskRecord }>(
+        "PATCH",
+        `/tasks/${id}`,
+        { data },
+      );
+      return mapTask(result.data);
     },
     vendor: VENDOR,
   };

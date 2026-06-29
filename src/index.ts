@@ -12,6 +12,8 @@ export type {
   CRMEmail,
   CRMEntityType,
   CRMLead,
+  CRMListOptions,
+  CRMListResult,
   CRMNote,
   CRMOwner,
   CRMPhone,
@@ -90,33 +92,10 @@ export type {
   CRMRuntimeChangeListener,
   CRMRuntimeOptions,
 } from "./runtime";
-export {
-  createHubSpotCRMAdapter,
-  createSalesforceCRMAdapter,
-  HUBSPOT_CONTACT_PROPERTY_NAMES,
-  HUBSPOT_DEAL_PROPERTY_NAMES,
-  mapHubSpotContactObject,
-  mapHubSpotDealObject,
-  mapSalesforceAccountRow,
-  mapSalesforceContactRow,
-  mapSalesforceDealRow,
-  mapSalesforceLeadRow,
-} from "./adapters";
-export type {
-  CreateHubSpotCRMAdapterOptions,
-  CreateSalesforceCRMAdapterOptions,
-  HubSpotBasicApi,
-  HubSpotClientLike,
-  HubSpotObjectResponse,
-  HubSpotPipeline,
-  HubSpotPipelineStage,
-  HubSpotPipelinesApi,
-  HubSpotSearchApi,
-  HubSpotSearchResponse,
-  SalesforceConnectionLike,
-  SalesforceQueryResult,
-  SalesforceSaveResult,
-} from "./adapters";
+// Re-export the full adapters barrel so EVERY CRM adapter (HubSpot, Salesforce,
+// GoHighLevel, Pipedrive, Zoho, Attio, Close, Monday) is available from the package
+// root. Adding a new CRM needs no change here — consumers import its factory directly.
+export * from "./adapters";
 export {
   createVoiceCRMBridge,
   createVoiceLeadCapturePathway,

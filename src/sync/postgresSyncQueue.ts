@@ -137,7 +137,8 @@ export const createPostgresCRMSyncQueue = async (
       notify(rowToJob(row));
       return true;
     },
-    async claimNext(at = now()) {
+    async claimNext(at = now(), kinds) {
+      const filterByKind = kinds !== undefined && kinds.length > 0;
       const rows = await query<JobRow>(
         `UPDATE ${jobs} SET
           status = 'in-flight',
@@ -146,12 +147,13 @@ export const createPostgresCRMSyncQueue = async (
          WHERE id = (
            SELECT id FROM ${jobs}
            WHERE status = 'pending' AND not_before_ms <= $1
+           ${filterByKind ? "AND kind = ANY($2)" : ""}
            ORDER BY not_before_ms ASC
            FOR UPDATE SKIP LOCKED
            LIMIT 1
          )
          RETURNING *`,
-        [at],
+        filterByKind ? [at, [...kinds]] : [at],
       );
       const row = rows[0];
       if (!row) return null;

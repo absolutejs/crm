@@ -1,12 +1,15 @@
 import type {
+  CRMActivity,
   CRMAdapter,
   CRMAdapterCapabilities,
   CRMAdapterFactoryInput,
   CRMContact,
   CRMDeal,
   CRMLead,
+  CRMNote,
   CRMPipeline,
   CRMStage,
+  CRMTask,
 } from "../types";
 import {
   assertHttpOk,
@@ -21,9 +24,17 @@ const GHL_DEFAULT_API_VERSION = "2021-07-28";
 
 const GHL_CAPABILITIES: CRMAdapterCapabilities = {
   preferredIdField: "id",
+  // GHL exposes DELETE on contacts, opportunities, contact-scoped notes & tasks.
+  supportsAccounts: false,
+  // GHL has no first-class Account/Company object (company info lives on contacts).
   supportsBulkUpsert: false,
   supportsCustomFields: true,
+  supportsDelete: true,
+  // No native lead→contact/deal conversion; "leads" are just contacts here.
+  supportsLeadConversion: false,
   supportsLeads: false,
+  // Paginated GET listing exists for contacts + opportunities (startAfter cursor).
+  supportsListing: true,
   supportsPipelines: true,
   supportsWebhooks: true,
   syncDirection: "outbound-only",
@@ -48,6 +59,71 @@ type GHLOpportunity = {
   pipelineStageId?: string;
   status?: "open" | "won" | "lost" | "abandoned";
   contactId?: string;
+};
+
+type GHLNote = {
+  id: string;
+  body: string;
+  contactId?: string;
+  dateAdded?: string;
+};
+
+type GHLTask = {
+  id: string;
+  title: string;
+  body?: string;
+  dueDate?: string;
+  completed?: boolean;
+  contactId?: string;
+  assignedTo?: string;
+};
+
+type GHLPipeline = {
+  id: string;
+  name: string;
+  stages: { id: string; name: string; position?: number }[];
+};
+
+// Cursor metadata returned by GHL's paginated list endpoints (contacts +
+// opportunities). `startAfter` (a ms timestamp) + `startAfterId` together form
+// the next-page cursor; `nextPageUrl` is null on the final page.
+type GHLListMeta = {
+  total?: number;
+  nextPageUrl?: string | null;
+  startAfter?: number;
+  startAfterId?: string;
+};
+
+// GHL notes/tasks (and the notes we use to model activities) are CONTACT-scoped:
+// their REST paths are /contacts/{contactId}/{notes|tasks}/{id}. The generic
+// CRMAdapter get/update/delete verbs only receive a single `id`, so callers
+// address a scoped entity with a composite id of the form `contactId:entityId`.
+const splitScopedId = (
+  id: string,
+): { contactId?: string; entityId: string } => {
+  const idx = id.indexOf(":");
+  if (idx === -1) return { entityId: id };
+  return { contactId: id.slice(0, idx), entityId: id.slice(idx + 1) };
+};
+
+// Build the opaque `{ items, nextCursor }` cursor from a GHL list `meta` block.
+// Returns undefined when there is no further page so the field is omitted.
+const buildCursor = (meta?: GHLListMeta): string | undefined => {
+  if (
+    !meta ||
+    !meta.nextPageUrl ||
+    meta.startAfter === undefined ||
+    !meta.startAfterId
+  ) {
+    return undefined;
+  }
+  return `${meta.startAfter}|${meta.startAfterId}`;
+};
+
+const parseTimestamp = (value?: string): number | undefined => {
+  if (!value) return undefined;
+  const ts = Date.parse(value);
+  return Number.isNaN(ts) ? undefined : ts;
 };
 
 // Agency (company) OAuth credentials. GoHighLevel contacts/opportunities are
@@ -157,6 +233,78 @@ const mapOpportunity = (opp: GHLOpportunity): CRMDeal => ({
         : "open",
 });
 
+// GHL has no separate Lead object — createLead already maps to a contact — so
+// inbound "leads" are contacts re-projected onto the CRMLead shape.
+const mapContactToLead = (contact: GHLContact): CRMLead => ({
+  emails: contact.email ? [{ address: contact.email, primary: true }] : [],
+  id: contact.id,
+  phones: contact.phone ? [{ label: "work", number: contact.phone }] : [],
+  vendor: VENDOR,
+  ...(contact.firstName ? { firstName: contact.firstName } : {}),
+  ...(contact.lastName ? { lastName: contact.lastName } : {}),
+  ...(contact.companyName ? { company: contact.companyName } : {}),
+});
+
+const mapNote = (note: GHLNote, fallbackContactId?: string): CRMNote => {
+  const contactId = note.contactId ?? fallbackContactId;
+  const createdAt = parseTimestamp(note.dateAdded);
+  return {
+    body: note.body,
+    id: note.id,
+    vendor: VENDOR,
+    ...(contactId ? { contactIds: [contactId] } : {}),
+    ...(createdAt !== undefined ? { createdAt } : {}),
+  };
+};
+
+// Activities are logged as contact notes (see logActivity), so inbound reads
+// project a note back onto the CRMActivity shape.
+const mapNoteToActivity = (
+  note: GHLNote,
+  fallbackContactId?: string,
+): CRMActivity => {
+  const contactId = note.contactId ?? fallbackContactId;
+  const occurredAt = parseTimestamp(note.dateAdded);
+  return {
+    id: note.id,
+    occurredAt: occurredAt ?? Date.now(),
+    type: "note",
+    vendor: VENDOR,
+    ...(note.body ? { body: note.body } : {}),
+    ...(contactId ? { contactIds: [contactId] } : {}),
+  };
+};
+
+const mapTask = (task: GHLTask, fallbackContactId?: string): CRMTask => {
+  const contactId = task.contactId ?? fallbackContactId;
+  const dueAt = parseTimestamp(task.dueDate);
+  return {
+    id: task.id,
+    status: task.completed ? "completed" : "pending",
+    subject: task.title,
+    vendor: VENDOR,
+    ...(task.body ? { description: task.body } : {}),
+    ...(contactId ? { contactIds: [contactId] } : {}),
+    ...(dueAt !== undefined ? { dueAt } : {}),
+    ...(task.assignedTo ? { ownerId: task.assignedTo } : {}),
+  };
+};
+
+const mapPipeline = (p: GHLPipeline): CRMPipeline => {
+  const stages: CRMStage[] = p.stages.map((s) => ({
+    id: s.id,
+    label: s.name,
+    ...(s.position !== undefined ? { order: s.position } : {}),
+    pipelineId: p.id,
+  }));
+  return {
+    id: p.id,
+    label: p.name,
+    stages,
+    vendor: VENDOR,
+  };
+};
+
 export const createGoHighLevelCRMAdapter = async (
   input: CreateGoHighLevelCRMAdapterOptions,
 ): Promise<CRMAdapter> => {
@@ -240,6 +388,23 @@ export const createGoHighLevelCRMAdapter = async (
       url: `${baseUrl}${path}`,
     });
     return assertHttpOk(response, `GoHighLevel ${method} ${path}`);
+  };
+
+  // Append the decoded `startAfter`/`startAfterId` cursor pair (see buildCursor)
+  // onto a list request's query params.
+  const applyCursor = (params: URLSearchParams, cursor?: string): void => {
+    if (!cursor) return;
+    const [startAfter, startAfterId] = cursor.split("|");
+    if (startAfter) params.set("startAfter", startAfter);
+    if (startAfterId) params.set("startAfterId", startAfterId);
+  };
+
+  const fetchPipelines = async (): Promise<CRMPipeline[]> => {
+    const result = await request<{ pipelines: GHLPipeline[] }>(
+      "GET",
+      `/opportunities/pipelines?locationId=${encodeURIComponent(locationId)}`,
+    );
+    return result.pipelines.map(mapPipeline);
   };
 
   return {
@@ -363,30 +528,7 @@ export const createGoHighLevelCRMAdapter = async (
       return mapContact(result.contact);
     },
     async listPipelines(): Promise<CRMPipeline[]> {
-      const result = await request<{
-        pipelines: {
-          id: string;
-          name: string;
-          stages: { id: string; name: string; position?: number }[];
-        }[];
-      }>(
-        "GET",
-        `/opportunities/pipelines?locationId=${encodeURIComponent(locationId)}`,
-      );
-      return result.pipelines.map((p) => {
-        const stages: CRMStage[] = p.stages.map((s) => ({
-          id: s.id,
-          label: s.name,
-          ...(s.position !== undefined ? { order: s.position } : {}),
-          pipelineId: p.id,
-        }));
-        return {
-          id: p.id,
-          label: p.name,
-          stages,
-          vendor: VENDOR,
-        };
-      });
+      return fetchPipelines();
     },
     async logActivity(activityInput) {
       const contactId = activityInput.contactIds?.[0];
@@ -452,6 +594,252 @@ export const createGoHighLevelCRMAdapter = async (
       );
       return mapOpportunity(result.opportunity);
     },
+
+    // --- Contacts (delete + list) ---
+    async deleteContact(id) {
+      await request<{ succeded?: boolean }>("DELETE", `/contacts/${id}`);
+    },
+    async listContacts(opts) {
+      const params = new URLSearchParams({
+        limit: String(opts?.limit ?? 20),
+        locationId,
+      });
+      applyCursor(params, opts?.cursor);
+      const result = await request<{
+        contacts: GHLContact[];
+        meta?: GHLListMeta;
+      }>("GET", `/contacts/?${params.toString()}`);
+      const nextCursor = buildCursor(result.meta);
+      return {
+        items: result.contacts.map(mapContact),
+        ...(nextCursor ? { nextCursor } : {}),
+      };
+    },
+
+    // --- Leads (GHL has no Lead object — leads ARE contacts) ---
+    async getLead(id) {
+      const result = await request<{ contact: GHLContact }>(
+        "GET",
+        `/contacts/${id}`,
+      );
+      return mapContactToLead(result.contact);
+    },
+    async listLeads(opts) {
+      const params = new URLSearchParams({
+        limit: String(opts?.limit ?? 20),
+        locationId,
+      });
+      applyCursor(params, opts?.cursor);
+      const result = await request<{
+        contacts: GHLContact[];
+        meta?: GHLListMeta;
+      }>("GET", `/contacts/?${params.toString()}`);
+      const nextCursor = buildCursor(result.meta);
+      return {
+        items: result.contacts.map(mapContactToLead),
+        ...(nextCursor ? { nextCursor } : {}),
+      };
+    },
+    async updateLead(id, patch) {
+      const body: Record<string, unknown> = {};
+      if (patch.firstName !== undefined) body.firstName = patch.firstName;
+      if (patch.lastName !== undefined) body.lastName = patch.lastName;
+      if (patch.emails?.[0]) body.email = patch.emails[0].address;
+      if (patch.phones?.[0]) body.phone = patch.phones[0].number;
+      if (patch.company !== undefined) body.companyName = patch.company;
+      const result = await request<{ contact: GHLContact }>(
+        "PUT",
+        `/contacts/${id}`,
+        body,
+      );
+      return mapContactToLead(result.contact);
+    },
+    async deleteLead(id) {
+      await request<{ succeded?: boolean }>("DELETE", `/contacts/${id}`);
+    },
+
+    // --- Deals (opportunities) ---
+    async getDeal(id) {
+      const result = await request<{ opportunity: GHLOpportunity }>(
+        "GET",
+        `/opportunities/${id}`,
+      );
+      return mapOpportunity(result.opportunity);
+    },
+    async listDeals(opts) {
+      const params = new URLSearchParams({
+        limit: String(opts?.limit ?? 20),
+        location_id: locationId,
+      });
+      applyCursor(params, opts?.cursor);
+      const result = await request<{
+        opportunities: GHLOpportunity[];
+        meta?: GHLListMeta;
+      }>("GET", `/opportunities/search?${params.toString()}`);
+      const nextCursor = buildCursor(result.meta);
+      return {
+        items: result.opportunities.map(mapOpportunity),
+        ...(nextCursor ? { nextCursor } : {}),
+      };
+    },
+    async deleteDeal(id) {
+      await request<{ succeded?: boolean }>("DELETE", `/opportunities/${id}`);
+    },
+
+    // --- Accounts (UNSUPPORTED: GHL has no Account/Company entity) ---
+    async getAccount() {
+      return null;
+    },
+    async listAccounts() {
+      return { items: [] };
+    },
+    async createAccount() {
+      throw new Error(
+        "GoHighLevel has no Account/Company entity; createAccount is unsupported (capabilities.supportsAccounts=false)",
+      );
+    },
+    async updateAccount() {
+      throw new Error(
+        "GoHighLevel has no Account/Company entity; updateAccount is unsupported (capabilities.supportsAccounts=false)",
+      );
+    },
+    async deleteAccount() {
+      // No-op: no Account entity to delete (supportsAccounts=false).
+    },
+
+    // --- Activities (modelled as contact-scoped notes) ---
+    async getActivity(id) {
+      const { contactId, entityId } = splitScopedId(id);
+      if (!contactId) {
+        throw new Error(
+          "GoHighLevel activities are stored as contact notes; getActivity requires a composite id of the form `contactId:noteId`",
+        );
+      }
+      const result = await request<{ note: GHLNote }>(
+        "GET",
+        `/contacts/${contactId}/notes/${entityId}`,
+      );
+      return mapNoteToActivity(result.note, contactId);
+    },
+    async updateActivity(id, patch) {
+      const scoped = splitScopedId(id);
+      const contactId = patch.contactIds?.[0] ?? scoped.contactId;
+      if (!contactId) {
+        throw new Error(
+          "GoHighLevel activities are stored as contact notes; updateActivity requires patch.contactIds[0] or a composite id `contactId:noteId`",
+        );
+      }
+      const body: Record<string, unknown> = {};
+      if (patch.body !== undefined) body.body = patch.body;
+      const result = await request<{ note: GHLNote }>(
+        "PUT",
+        `/contacts/${contactId}/notes/${scoped.entityId}`,
+        body,
+      );
+      return mapNoteToActivity(result.note, contactId);
+    },
+
+    // --- Notes (contact-scoped) ---
+    async getNote(id) {
+      const { contactId, entityId } = splitScopedId(id);
+      if (!contactId) {
+        throw new Error(
+          "GoHighLevel notes are contact-scoped; getNote requires a composite id of the form `contactId:noteId`",
+        );
+      }
+      const result = await request<{ note: GHLNote }>(
+        "GET",
+        `/contacts/${contactId}/notes/${entityId}`,
+      );
+      return mapNote(result.note, contactId);
+    },
+    async updateNote(id, patch) {
+      const scoped = splitScopedId(id);
+      const contactId = patch.contactIds?.[0] ?? scoped.contactId;
+      if (!contactId) {
+        throw new Error(
+          "GoHighLevel notes are contact-scoped; updateNote requires patch.contactIds[0] or a composite id `contactId:noteId`",
+        );
+      }
+      const body: Record<string, unknown> = {};
+      if (patch.body !== undefined) body.body = patch.body;
+      const result = await request<{ note: GHLNote }>(
+        "PUT",
+        `/contacts/${contactId}/notes/${scoped.entityId}`,
+        body,
+      );
+      return mapNote(result.note, contactId);
+    },
+    async deleteNote(id) {
+      const { contactId, entityId } = splitScopedId(id);
+      if (!contactId) {
+        throw new Error(
+          "GoHighLevel notes are contact-scoped; deleteNote requires a composite id of the form `contactId:noteId`",
+        );
+      }
+      await request<{ succeded?: boolean }>(
+        "DELETE",
+        `/contacts/${contactId}/notes/${entityId}`,
+      );
+    },
+
+    // --- Tasks (contact-scoped) ---
+    async getTask(id) {
+      const { contactId, entityId } = splitScopedId(id);
+      if (!contactId) {
+        throw new Error(
+          "GoHighLevel tasks are contact-scoped; getTask requires a composite id of the form `contactId:taskId`",
+        );
+      }
+      const result = await request<{ task: GHLTask }>(
+        "GET",
+        `/contacts/${contactId}/tasks/${entityId}`,
+      );
+      return mapTask(result.task, contactId);
+    },
+    async updateTask(id, patch) {
+      const scoped = splitScopedId(id);
+      const contactId = patch.contactIds?.[0] ?? scoped.contactId;
+      if (!contactId) {
+        throw new Error(
+          "GoHighLevel tasks are contact-scoped; updateTask requires patch.contactIds[0] or a composite id `contactId:taskId`",
+        );
+      }
+      const body: Record<string, unknown> = {};
+      if (patch.subject !== undefined) body.title = patch.subject;
+      if (patch.description !== undefined) body.body = patch.description;
+      if (patch.dueAt !== undefined) {
+        body.dueDate = new Date(patch.dueAt).toISOString();
+      }
+      if (patch.status !== undefined) {
+        body.completed = patch.status === "completed";
+      }
+      const result = await request<{ task: GHLTask }>(
+        "PUT",
+        `/contacts/${contactId}/tasks/${scoped.entityId}`,
+        body,
+      );
+      return mapTask(result.task, contactId);
+    },
+    async deleteTask(id) {
+      const { contactId, entityId } = splitScopedId(id);
+      if (!contactId) {
+        throw new Error(
+          "GoHighLevel tasks are contact-scoped; deleteTask requires a composite id of the form `contactId:taskId`",
+        );
+      }
+      await request<{ succeded?: boolean }>(
+        "DELETE",
+        `/contacts/${contactId}/tasks/${entityId}`,
+      );
+    },
+
+    // --- Pipelines (single get filtered from list; no single-get endpoint) ---
+    async getPipeline(id) {
+      const pipelines = await fetchPipelines();
+      return pipelines.find((p) => p.id === id) ?? null;
+    },
+
     vendor: VENDOR,
   };
 };

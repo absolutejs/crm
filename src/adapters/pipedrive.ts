@@ -1,4 +1,6 @@
 import type {
+  CRMAccount,
+  CRMActivity,
   CRMAdapter,
   CRMAdapterCapabilities,
   CRMAdapterFactoryInput,
@@ -6,8 +8,12 @@ import type {
   CRMDeal,
   CRMEmail,
   CRMLead,
+  CRMListOptions,
+  CRMListResult,
+  CRMNote,
   CRMPhone,
   CRMPipeline,
+  CRMTask,
 } from "../types";
 import {
   assertHttpOk,
@@ -19,9 +25,13 @@ const VENDOR = "pipedrive" as const;
 
 const PIPEDRIVE_CAPABILITIES: CRMAdapterCapabilities = {
   preferredIdField: "id",
+  supportsAccounts: true,
   supportsBulkUpsert: false,
   supportsCustomFields: true,
+  supportsDelete: true,
+  supportsLeadConversion: true,
   supportsLeads: true,
+  supportsListing: true,
   supportsPipelines: true,
   supportsWebhooks: true,
   syncDirection: "outbound-only",
@@ -51,6 +61,69 @@ type PipedriveDeal = {
   expected_close_date?: string;
   org_id?: { value: number } | number;
   person_id?: { value: number } | number;
+};
+
+type PipedriveLead = {
+  id: string;
+  title?: string;
+  owner_id?: number;
+  person_id?: number | null;
+  organization_id?: number | null;
+  value?: { amount: number; currency: string } | null;
+  source_name?: string;
+  is_archived?: boolean;
+  add_time?: string;
+  update_time?: string;
+};
+
+type PipedriveOrganization = {
+  id: number;
+  name: string;
+  address?: string | null;
+  owner_id?: { id: number; name?: string } | number;
+  add_time?: string;
+  update_time?: string;
+};
+
+type PipedriveActivity = {
+  id: number;
+  subject?: string;
+  type?: string;
+  note?: string;
+  done?: boolean;
+  due_date?: string;
+  due_time?: string;
+  duration?: string;
+  add_time?: string;
+  person_id?: number;
+  deal_id?: number;
+  org_id?: number;
+  owner_id?: number;
+  user_id?: number;
+};
+
+type PipedriveNote = {
+  id: number;
+  content: string;
+  person_id?: number | null;
+  deal_id?: number | null;
+  org_id?: number | null;
+  user_id?: number;
+  add_time?: string;
+};
+
+type PipedrivePipeline = {
+  id: number;
+  name: string;
+  selected?: boolean;
+};
+
+type PipedriveStage = {
+  id: number;
+  name: string;
+  pipeline_id: number;
+  order_nr: number;
+  deal_probability?: number;
 };
 
 export type CreatePipedriveCRMAdapterOptions = CRMAdapterFactoryInput & {
@@ -152,6 +225,120 @@ const mapDealToCRM = (deal: PipedriveDeal): CRMDeal => {
   };
 };
 
+const numericOwnerId = (
+  owner: { id: number } | number | undefined,
+): string | undefined => {
+  if (typeof owner === "object") return String(owner.id);
+  if (owner !== undefined) return String(owner);
+  return undefined;
+};
+
+const mapLeadToCRM = (lead: PipedriveLead): CRMLead => ({
+  emails: [],
+  id: String(lead.id),
+  phones: [],
+  vendor: VENDOR,
+  ...(lead.value
+    ? { currency: lead.value.currency, estimatedValue: lead.value.amount }
+    : {}),
+  ...(lead.owner_id !== undefined ? { ownerId: String(lead.owner_id) } : {}),
+  ...(lead.source_name ? { source: lead.source_name } : {}),
+  ...(lead.add_time
+    ? { createdAt: new Date(lead.add_time).getTime() }
+    : {}),
+  ...(lead.update_time
+    ? { updatedAt: new Date(lead.update_time).getTime() }
+    : {}),
+});
+
+const mapOrgToAccount = (org: PipedriveOrganization): CRMAccount => {
+  const ownerId = numericOwnerId(org.owner_id);
+  return {
+    id: String(org.id),
+    name: org.name,
+    vendor: VENDOR,
+    ...(ownerId ? { ownerId } : {}),
+    ...(org.address ? { addresses: [{ street: org.address }] } : {}),
+    ...(org.add_time ? { createdAt: new Date(org.add_time).getTime() } : {}),
+    ...(org.update_time
+      ? { updatedAt: new Date(org.update_time).getTime() }
+      : {}),
+  };
+};
+
+const mapActivityType = (type: string | undefined): CRMActivity["type"] => {
+  if (type === "call") return "call";
+  if (type === "email") return "email";
+  if (type === "meeting") return "meeting";
+  if (type === "task") return "task";
+  return "other";
+};
+
+const activityOccurredAt = (activity: PipedriveActivity): number => {
+  if (activity.due_date) {
+    return new Date(
+      `${activity.due_date}T${activity.due_time || "00:00:00"}`,
+    ).getTime();
+  }
+  if (activity.add_time) return new Date(activity.add_time).getTime();
+  return Date.now();
+};
+
+const mapActivityToCRM = (activity: PipedriveActivity): CRMActivity => {
+  const ownerId = activity.owner_id ?? activity.user_id;
+  return {
+    id: String(activity.id),
+    occurredAt: activityOccurredAt(activity),
+    type: mapActivityType(activity.type),
+    vendor: VENDOR,
+    ...(activity.subject ? { subject: activity.subject } : {}),
+    ...(activity.note ? { body: activity.note } : {}),
+    ...(activity.person_id !== undefined
+      ? { contactIds: [String(activity.person_id)] }
+      : {}),
+    ...(activity.deal_id !== undefined
+      ? { dealId: String(activity.deal_id) }
+      : {}),
+    ...(activity.org_id !== undefined
+      ? { accountId: String(activity.org_id) }
+      : {}),
+    ...(ownerId !== undefined ? { ownerId: String(ownerId) } : {}),
+  };
+};
+
+const mapActivityToTask = (activity: PipedriveActivity): CRMTask => {
+  const ownerId = activity.owner_id ?? activity.user_id;
+  return {
+    id: String(activity.id),
+    subject: activity.subject ?? "",
+    vendor: VENDOR,
+    status: activity.done ? "completed" : "pending",
+    ...(activity.note ? { description: activity.note } : {}),
+    ...(activity.person_id !== undefined
+      ? { contactIds: [String(activity.person_id)] }
+      : {}),
+    ...(activity.deal_id !== undefined
+      ? { dealId: String(activity.deal_id) }
+      : {}),
+    ...(activity.org_id !== undefined
+      ? { accountId: String(activity.org_id) }
+      : {}),
+    ...(ownerId !== undefined ? { ownerId: String(ownerId) } : {}),
+    ...(activity.due_date ? { dueAt: activityOccurredAt(activity) } : {}),
+  };
+};
+
+const mapNoteToCRM = (note: PipedriveNote): CRMNote => ({
+  body: note.content,
+  id: String(note.id),
+  vendor: VENDOR,
+  ...(note.person_id ? { contactIds: [String(note.person_id)] } : {}),
+  ...(note.deal_id ? { dealId: String(note.deal_id) } : {}),
+  ...(note.org_id ? { accountId: String(note.org_id) } : {}),
+  ...(note.user_id !== undefined ? { ownerId: String(note.user_id) } : {}),
+  ...(note.add_time ? { createdAt: new Date(note.add_time).getTime() } : {}),
+});
+
 export const createPipedriveCRMAdapter = async (
   input: CreatePipedriveCRMAdapterOptions,
 ): Promise<CRMAdapter> => {
@@ -174,6 +361,64 @@ export const createPipedriveCRMAdapter = async (
       url: `${baseUrl}/api/v1${path}`,
     });
     const payload = assertHttpOk(response, `Pipedrive ${method} ${path}`);
+    return payload.data;
+  };
+
+  const requestList = async <T>(
+    path: string,
+    opts?: CRMListOptions,
+  ): Promise<CRMListResult<T>> => {
+    const limit = Math.min(opts?.limit ?? 100, 500);
+    const start = opts?.cursor ? Number(opts.cursor) : 0;
+    const sep = path.includes("?") ? "&" : "?";
+    const response = await http<{
+      data: T[] | null;
+      success?: boolean;
+      additional_data?: {
+        pagination?: {
+          more_items_in_collection?: boolean;
+          next_start?: number;
+        };
+      };
+    }>({
+      headers: authHeaders(),
+      method: "GET",
+      url: `${baseUrl}/api/v1${path}${sep}limit=${limit}&start=${start}`,
+    });
+    const payload = assertHttpOk(response, `Pipedrive GET ${path}`);
+    const pagination = payload.additional_data?.pagination;
+    const nextCursor =
+      pagination?.more_items_in_collection &&
+      pagination.next_start !== undefined
+        ? String(pagination.next_start)
+        : undefined;
+    return {
+      items: payload.data ?? [],
+      ...(nextCursor !== undefined ? { nextCursor } : {}),
+    };
+  };
+
+  const deleteRequest = async (path: string): Promise<void> => {
+    const response = await http<{ data?: unknown; success?: boolean }>({
+      headers: authHeaders(),
+      method: "DELETE",
+      url: `${baseUrl}/api/v1${path}`,
+    });
+    assertHttpOk(response, `Pipedrive DELETE ${path}`);
+  };
+
+  const requestV2 = async <T>(
+    method: "GET" | "POST",
+    path: string,
+    body?: unknown,
+  ): Promise<T> => {
+    const response = await http<{ data: T; success?: boolean }>({
+      body,
+      headers: authHeaders(),
+      method,
+      url: `${baseUrl}/api/v2${path}`,
+    });
+    const payload = assertHttpOk(response, `Pipedrive ${method} v2 ${path}`);
     return payload.data;
   };
 
@@ -202,6 +447,48 @@ export const createPipedriveCRMAdapter = async (
       };
     },
     capabilities: PIPEDRIVE_CAPABILITIES,
+    async convertLead(leadId) {
+      const lead = await request<PipedriveLead | null>(
+        "GET",
+        `/leads/${leadId}`,
+      );
+      if (!lead || lead.person_id === undefined || lead.person_id === null) {
+        throw new Error(
+          `Pipedrive convertLead requires the lead to have an associated person (lead ${leadId})`,
+        );
+      }
+      const person = await request<PipedrivePerson>(
+        "GET",
+        `/persons/${lead.person_id}`,
+      );
+      const contact = mapPersonToContact(person);
+      const conversion = await requestV2<{
+        deal_id?: number;
+        status?: string;
+      }>("POST", `/leads/${leadId}/convert/deal`);
+      if (conversion.deal_id === undefined) return { contact };
+      const deal = await request<PipedriveDeal>(
+        "GET",
+        `/deals/${conversion.deal_id}`,
+      );
+      return { contact, deal: mapDealToCRM(deal) };
+    },
+    async createAccount(accountInput) {
+      const org = await request<PipedriveOrganization>(
+        "POST",
+        "/organizations",
+        {
+          name: accountInput.name,
+          ...(accountInput.ownerId
+            ? { owner_id: Number(accountInput.ownerId) }
+            : {}),
+          ...(accountInput.addresses?.[0]?.street
+            ? { address: accountInput.addresses[0].street }
+            : {}),
+        },
+      );
+      return { ...accountInput, id: String(org.id), vendor: VENDOR };
+    },
     async createContact(contactInput) {
       const person = await request<PipedrivePerson>("POST", "/persons", {
         email: emailsToPipedrive(contactInput.emails),
@@ -286,9 +573,128 @@ export const createPipedriveCRMAdapter = async (
       });
       return { ...taskInput, id: String(activity.id), vendor: VENDOR };
     },
+    async deleteAccount(id) {
+      await deleteRequest(`/organizations/${id}`);
+    },
+    async deleteContact(id) {
+      await deleteRequest(`/persons/${id}`);
+    },
+    async deleteDeal(id) {
+      await deleteRequest(`/deals/${id}`);
+    },
+    async deleteLead(id) {
+      await deleteRequest(`/leads/${id}`);
+    },
+    async deleteNote(id) {
+      await deleteRequest(`/notes/${id}`);
+    },
+    async deleteTask(id) {
+      await deleteRequest(`/activities/${id}`);
+    },
+    async getAccount(id) {
+      const org = await request<PipedriveOrganization | null>(
+        "GET",
+        `/organizations/${id}`,
+      );
+      return org ? mapOrgToAccount(org) : null;
+    },
+    async getActivity(id) {
+      const activity = await request<PipedriveActivity | null>(
+        "GET",
+        `/activities/${id}`,
+      );
+      return activity ? mapActivityToCRM(activity) : null;
+    },
     async getContact(id) {
       const person = await request<PipedrivePerson>("GET", `/persons/${id}`);
       return mapPersonToContact(person);
+    },
+    async getDeal(id) {
+      const deal = await request<PipedriveDeal | null>("GET", `/deals/${id}`);
+      return deal ? mapDealToCRM(deal) : null;
+    },
+    async getLead(id) {
+      const lead = await request<PipedriveLead | null>("GET", `/leads/${id}`);
+      return lead ? mapLeadToCRM(lead) : null;
+    },
+    async getNote(id) {
+      const note = await request<PipedriveNote | null>("GET", `/notes/${id}`);
+      return note ? mapNoteToCRM(note) : null;
+    },
+    async getPipeline(id) {
+      const pipeline = await request<PipedrivePipeline | null>(
+        "GET",
+        `/pipelines/${id}`,
+      );
+      if (!pipeline) return null;
+      const stages = await request<PipedriveStage[]>(
+        "GET",
+        `/stages?pipeline_id=${id}`,
+      );
+      return {
+        id: String(pipeline.id),
+        isDefault: pipeline.selected ?? false,
+        label: pipeline.name,
+        stages: stages
+          .filter((s) => s.pipeline_id === pipeline.id)
+          .sort((a, b) => a.order_nr - b.order_nr)
+          .map((s) => ({
+            id: String(s.id),
+            label: s.name,
+            order: s.order_nr,
+            pipelineId: String(pipeline.id),
+            ...(s.deal_probability !== undefined
+              ? { probability: s.deal_probability / 100 }
+              : {}),
+          })),
+        vendor: VENDOR,
+      };
+    },
+    async getTask(id) {
+      const activity = await request<PipedriveActivity | null>(
+        "GET",
+        `/activities/${id}`,
+      );
+      return activity ? mapActivityToTask(activity) : null;
+    },
+    async listAccounts(opts) {
+      const result = await requestList<PipedriveOrganization>(
+        "/organizations",
+        opts,
+      );
+      return {
+        items: result.items.map(mapOrgToAccount),
+        ...(result.nextCursor !== undefined
+          ? { nextCursor: result.nextCursor }
+          : {}),
+      };
+    },
+    async listContacts(opts) {
+      const result = await requestList<PipedrivePerson>("/persons", opts);
+      return {
+        items: result.items.map(mapPersonToContact),
+        ...(result.nextCursor !== undefined
+          ? { nextCursor: result.nextCursor }
+          : {}),
+      };
+    },
+    async listDeals(opts) {
+      const result = await requestList<PipedriveDeal>("/deals", opts);
+      return {
+        items: result.items.map(mapDealToCRM),
+        ...(result.nextCursor !== undefined
+          ? { nextCursor: result.nextCursor }
+          : {}),
+      };
+    },
+    async listLeads(opts) {
+      const result = await requestList<PipedriveLead>("/leads", opts);
+      return {
+        items: result.items.map(mapLeadToCRM),
+        ...(result.nextCursor !== undefined
+          ? { nextCursor: result.nextCursor }
+          : {}),
+      };
     },
     async listPipelines(): Promise<CRMPipeline[]> {
       const pipelines = await request<
@@ -405,6 +811,71 @@ export const createPipedriveCRMAdapter = async (
       }
       const deal = await request<PipedriveDeal>("PUT", `/deals/${id}`, body);
       return mapDealToCRM(deal);
+    },
+    async updateAccount(id, patch) {
+      const body: Record<string, unknown> = {};
+      if (patch.name !== undefined) body.name = patch.name;
+      if (patch.ownerId !== undefined) body.owner_id = Number(patch.ownerId);
+      if (patch.addresses?.[0]?.street !== undefined) {
+        body.address = patch.addresses[0].street;
+      }
+      const org = await request<PipedriveOrganization>(
+        "PUT",
+        `/organizations/${id}`,
+        body,
+      );
+      return mapOrgToAccount(org);
+    },
+    async updateActivity(id, patch) {
+      const body: Record<string, unknown> = {};
+      if (patch.subject !== undefined) body.subject = patch.subject;
+      if (patch.body !== undefined) body.note = patch.body;
+      if (patch.type !== undefined) body.type = patch.type;
+      if (patch.durationSeconds !== undefined) {
+        body.duration = secondsToHHMMSS(patch.durationSeconds);
+      }
+      if (patch.occurredAt !== undefined) {
+        body.due_date = new Date(patch.occurredAt).toISOString().slice(0, 10);
+      }
+      const activity = await request<PipedriveActivity>(
+        "PUT",
+        `/activities/${id}`,
+        body,
+      );
+      return mapActivityToCRM(activity);
+    },
+    async updateLead(id, patch) {
+      const body: Record<string, unknown> = {};
+      if (patch.estimatedValue !== undefined && patch.currency !== undefined) {
+        body.value = { amount: patch.estimatedValue, currency: patch.currency };
+      }
+      if (patch.source !== undefined) body.source_name = patch.source;
+      if (patch.ownerId !== undefined) body.owner_id = Number(patch.ownerId);
+      const lead = await request<PipedriveLead>("PATCH", `/leads/${id}`, body);
+      return mapLeadToCRM(lead);
+    },
+    async updateNote(id, patch) {
+      const body: Record<string, unknown> = {};
+      if (patch.body !== undefined) body.content = patch.body;
+      const note = await request<PipedriveNote>("PUT", `/notes/${id}`, body);
+      return mapNoteToCRM(note);
+    },
+    async updateTask(id, patch) {
+      const body: Record<string, unknown> = {};
+      if (patch.subject !== undefined) body.subject = patch.subject;
+      if (patch.description !== undefined) body.note = patch.description;
+      if (patch.status !== undefined) {
+        body.done = patch.status === "completed" ? 1 : 0;
+      }
+      if (patch.dueAt !== undefined) {
+        body.due_date = new Date(patch.dueAt).toISOString().slice(0, 10);
+      }
+      const activity = await request<PipedriveActivity>(
+        "PUT",
+        `/activities/${id}`,
+        body,
+      );
+      return mapActivityToTask(activity);
     },
     vendor: VENDOR,
   };

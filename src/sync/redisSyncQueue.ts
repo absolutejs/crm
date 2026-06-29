@@ -80,21 +80,24 @@ export const createRedisCRMSyncQueue = (
       notify(job);
       return true;
     },
-    async claimNext(at = now()) {
+    async claimNext(at = now(), kinds) {
+      const filterByKind = kinds !== undefined && kinds.length > 0;
       const ids = await client.zrangebyscore(pendingZsetKey(prefix), 0, at, {
-        limit: { count: 1, offset: 0 },
+        limit: { count: filterByKind ? 100 : 1, offset: 0 },
       });
-      const id = ids[0];
-      if (!id) return null;
-      const job = await load(id);
-      if (!job) return null;
-      await clearOldStatus(id, job.status);
-      job.status = "in-flight";
-      job.attempts += 1;
-      job.startedAtMs = at;
-      await persist(job);
-      notify(job);
-      return job;
+      for (const id of ids) {
+        const job = await load(id);
+        if (!job) continue;
+        if (filterByKind && !kinds.includes(job.kind)) continue;
+        await clearOldStatus(id, job.status);
+        job.status = "in-flight";
+        job.attempts += 1;
+        job.startedAtMs = at;
+        await persist(job);
+        notify(job);
+        return job;
+      }
+      return null;
     },
     async enqueue(input) {
       const existingId = await client.get(

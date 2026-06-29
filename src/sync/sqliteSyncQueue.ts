@@ -171,8 +171,18 @@ export const createSqliteCRMSyncQueue = (
       writeJob(job);
       return true;
     },
-    async claimNext(at = now()) {
-      const row = claimNextStmt.get(at) as JobRow | undefined;
+    async claimNext(at = now(), kinds) {
+      const row = (
+        kinds && kinds.length > 0
+          ? options.db
+              .prepare(
+                `SELECT * FROM ${jobs} WHERE status = 'pending' AND not_before_ms <= ?
+                 AND kind IN (${kinds.map(() => "?").join(", ")})
+                 ORDER BY not_before_ms ASC LIMIT 1`,
+              )
+              .get(at, ...kinds)
+          : claimNextStmt.get(at)
+      ) as JobRow | undefined;
       if (!row) return null;
       const job = rowToJob(row);
       job.status = "in-flight";

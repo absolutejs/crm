@@ -44,11 +44,12 @@ export const createInMemoryCRMSyncQueue = (
       notify(job);
       return true;
     },
-    async claimNext(at = now()) {
+    async claimNext(at = now(), kinds) {
       let nextJob: CRMSyncJob | undefined;
       for (const job of jobs.values()) {
         if (job.status !== "pending") continue;
         if (job.notBeforeMs > at) continue;
+        if (kinds && kinds.length > 0 && !kinds.includes(job.kind)) continue;
         if (!nextJob || job.notBeforeMs < nextJob.notBeforeMs) {
           nextJob = job;
         }
