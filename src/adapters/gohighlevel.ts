@@ -16,6 +16,9 @@ import {
 
 const VENDOR = "gohighlevel" as const;
 
+const GHL_BASE_URL = "https://services.leadconnectorhq.com";
+const GHL_DEFAULT_API_VERSION = "2021-07-28";
+
 const GHL_CAPABILITIES: CRMAdapterCapabilities = {
   preferredIdField: "id",
   supportsBulkUpsert: false,
@@ -47,9 +50,82 @@ type GHLOpportunity = {
   contactId?: string;
 };
 
-export type CreateGoHighLevelCRMAdapterOptions = CRMAdapterFactoryInput & {
+// Agency (company) OAuth credentials. GoHighLevel contacts/opportunities are
+// per-LOCATION, so a company-scoped token can't push directly — the adapter mints
+// a location-scoped token (POST /oauth/locationToken) lazily and caches it for the
+// adapter's lifetime / until expiry, then uses it as the bearer for every call.
+export type GoHighLevelAgencyAuth = {
+  companyToken: string;
+  companyId: string;
+  locationId: string;
+  // Marketplace app id (the OAuth client_id before the "-"). Carried for parity with
+  // listGoHighLevelInstalledLocations; not required to mint a location token.
+  appId: string;
+};
+
+// Location-mode (back-compat): a location-scoped access token + its locationId.
+export type GoHighLevelLocationCRMAdapterOptions = CRMAdapterFactoryInput & {
   httpClient?: CRMHttpClient;
   apiVersion?: string;
+};
+
+// Agency-mode: a company token that gets exchanged for a location token at call time.
+export type GoHighLevelAgencyCRMAdapterOptions = {
+  agency: GoHighLevelAgencyAuth;
+  httpClient?: CRMHttpClient;
+  apiVersion?: string;
+};
+
+export type CreateGoHighLevelCRMAdapterOptions =
+  | GoHighLevelLocationCRMAdapterOptions
+  | GoHighLevelAgencyCRMAdapterOptions;
+
+type GHLLocationTokenResponse = {
+  access_token: string;
+  expires_in?: number;
+};
+
+type GHLInstalledLocationsResponse = {
+  locations: { _id: string; name: string }[];
+};
+
+export type GoHighLevelInstalledLocation = {
+  id: string;
+  name: string;
+};
+
+// List the locations where the marketplace app is installed under an agency token.
+// Lets the caller resolve which location an agency-scoped grant should target.
+export const listGoHighLevelInstalledLocations = async (input: {
+  companyToken: string;
+  companyId: string;
+  appId: string;
+  apiVersion?: string;
+  httpClient?: CRMHttpClient;
+}): Promise<GoHighLevelInstalledLocation[]> => {
+  const http = input.httpClient ?? createFetchCRMHttpClient();
+  const apiVersion = input.apiVersion ?? GHL_DEFAULT_API_VERSION;
+  const params = new URLSearchParams({
+    appId: input.appId,
+    companyId: input.companyId,
+    isInstalled: "true",
+  });
+  const response = await http<GHLInstalledLocationsResponse>({
+    headers: {
+      Authorization: `Bearer ${input.companyToken}`,
+      Version: apiVersion,
+    },
+    method: "GET",
+    url: `${GHL_BASE_URL}/oauth/installedLocations?${params.toString()}`,
+  });
+  const data = assertHttpOk(
+    response,
+    "GoHighLevel GET /oauth/installedLocations",
+  );
+  return data.locations.map((location) => ({
+    id: location._id,
+    name: location.name,
+  }));
 };
 
 const mapContact = (contact: GHLContact): CRMContact => ({
@@ -85,17 +161,69 @@ export const createGoHighLevelCRMAdapter = async (
   input: CreateGoHighLevelCRMAdapterOptions,
 ): Promise<CRMAdapter> => {
   const http = input.httpClient ?? createFetchCRMHttpClient();
-  const baseUrl = "https://services.leadconnectorhq.com";
-  const apiVersion = input.apiVersion ?? "2021-07-28";
-  const locationId = input.subAccountId;
-  if (!locationId) {
-    throw new Error(
-      "GoHighLevel adapter requires subAccountId (locationId from OAuth token response)",
-    );
-  }
+  const baseUrl = GHL_BASE_URL;
+  const apiVersion = input.apiVersion ?? GHL_DEFAULT_API_VERSION;
 
-  const authHeaders = (): Record<string, string> => ({
-    Authorization: `Bearer ${input.accessToken}`,
+  // Lazily-minted, cached location token used only in agency mode.
+  let cachedLocationToken: { value: string; expiresAtMs: number } | null = null;
+  const mintLocationToken = async (
+    agency: GoHighLevelAgencyAuth,
+  ): Promise<string> => {
+    const now = Date.now();
+    if (cachedLocationToken && cachedLocationToken.expiresAtMs - now > 60000) {
+      return cachedLocationToken.value;
+    }
+    const response = await http<GHLLocationTokenResponse>({
+      body: new URLSearchParams({
+        companyId: agency.companyId,
+        locationId: agency.locationId,
+      }),
+      headers: {
+        Authorization: `Bearer ${agency.companyToken}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+        Version: apiVersion,
+      },
+      method: "POST",
+      url: `${baseUrl}/oauth/locationToken`,
+    });
+    const data = assertHttpOk(response, "GoHighLevel POST /oauth/locationToken");
+    cachedLocationToken = {
+      expiresAtMs: now + (data.expires_in ?? 3600) * 1000,
+      value: data.access_token,
+    };
+    return data.access_token;
+  };
+
+  // Resolve the locationId + the bearer-token provider once, branching on mode.
+  // Agency mode exchanges the company token for a location token at call time;
+  // location mode uses the supplied access token directly (back-compat).
+  const resolveAuth = (): {
+    locationId: string;
+    getBearer: () => Promise<string>;
+  } => {
+    if ("agency" in input) {
+      const { agency } = input;
+      return {
+        getBearer: () => mintLocationToken(agency),
+        locationId: agency.locationId,
+      };
+    }
+    const { accessToken, subAccountId } = input;
+    if (!subAccountId) {
+      throw new Error(
+        "GoHighLevel adapter requires subAccountId (locationId from OAuth token response)",
+      );
+    }
+    return {
+      getBearer: () => Promise.resolve(accessToken),
+      locationId: subAccountId,
+    };
+  };
+
+  const { getBearer, locationId } = resolveAuth();
+
+  const authHeaders = async (): Promise<Record<string, string>> => ({
+    Authorization: `Bearer ${await getBearer()}`,
     "Content-Type": "application/json",
     Version: apiVersion,
   });
@@ -107,7 +235,7 @@ export const createGoHighLevelCRMAdapter = async (
   ): Promise<T> => {
     const response = await http<T>({
       body,
-      headers: authHeaders(),
+      headers: await authHeaders(),
       method,
       url: `${baseUrl}${path}`,
     });

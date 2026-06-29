@@ -19,10 +19,17 @@ export {
 export type { CreateCloseCRMAdapterOptions } from "./close";
 export {
   createGoHighLevelCRMAdapter,
+  listGoHighLevelInstalledLocations,
   mapGoHighLevelContact,
   mapGoHighLevelOpportunity,
 } from "./gohighlevel";
-export type { CreateGoHighLevelCRMAdapterOptions } from "./gohighlevel";
+export type {
+  CreateGoHighLevelCRMAdapterOptions,
+  GoHighLevelAgencyAuth,
+  GoHighLevelAgencyCRMAdapterOptions,
+  GoHighLevelInstalledLocation,
+  GoHighLevelLocationCRMAdapterOptions,
+} from "./gohighlevel";
 export {
   createHubSpotCRMAdapter,
   HUBSPOT_CONTACT_PROPERTY_NAMES,
