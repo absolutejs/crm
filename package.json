@@ -24,10 +24,16 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
-    }
+    },
+    "./manifest": {
+      "types": "./dist/manifest.d.ts",
+      "import": "./dist/manifest.js",
+      "default": "./dist/manifest.js"
+    },
+    "./manifest.json": "./dist/manifest.json"
   },
   "scripts": {
-    "build": "rm -rf dist && bun build src/index.ts --outdir dist --target=bun --external elysia --external citra --external @absolutejs/auth --external @absolutejs/voice --external jsforce --external @hubspot/api-client --external @mondaydotcomorg/api && tsc --emitDeclarationOnly --project tsconfig.json",
+    "build": "rm -rf dist && bun build src/index.ts src/manifest.ts --root ./src --outdir dist --target=bun --external elysia --external citra --external @absolutejs/auth --external @absolutejs/voice --external jsforce --external @hubspot/api-client --external @mondaydotcomorg/api && tsc --emitDeclarationOnly --project tsconfig.json && absolute-manifest emit",
     "config": "absolute config",
     "test": "bun test",
     "typecheck": "bun run tsc --noEmit",
@@ -70,5 +76,12 @@
     "citra": "0.27.0",
     "elysia": "1.4.28",
     "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "@absolutejs/manifest": "^0.1.0",
+    "@sinclair/typebox": "^0.34.0"
+  },
+  "absolutejs": {
+    "manifestContract": 1
   }
 }
