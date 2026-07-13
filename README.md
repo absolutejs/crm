@@ -35,4 +35,4 @@ A unified CRM contract (`CRMAdapter`) plus vendor adapters for the major CRMs, d
 
 ## License
 
-CC BY-NC 4.0. See [LICENSE](./LICENSE).
+Business Source License 1.1 — production use is free except offering it as a competing hosted CRM or CRM-integration service (see the Additional Use Grant in [LICENSE](./LICENSE)). Converts to Apache 2.0 on May 29, 2030.

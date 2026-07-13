@@ -23,7 +23,10 @@ any of the following:
 
 1. **Offering a Competing Service.** You may not offer the Licensed Work, or
    any derivative or substantial portion of it, to third parties as a hosted or
-   managed service that competes with a hosted CRM, CRM-as-a-service, or CRM integration platform (including, but not limited to, services like HubSpot, Salesforce, Pipedrive, Close.com, or Attio). This includes any
+   managed service that competes with a hosted CRM, CRM-as-a-service, a
+   unified CRM API, or a CRM integration platform (including, but not limited
+   to, services like HubSpot, Salesforce, Pipedrive, Close.com, Attio,
+   Merge.dev, Nango, Paragon, or Apideck). This includes any
    product whose primary value to its users is the functionality the Licensed
    Work provides.
 
