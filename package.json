@@ -1,6 +1,6 @@
 {
   "name": "@absolutejs/crm",
-  "version": "0.0.10-alpha.8",
+  "version": "0.0.10-alpha.9",
   "description": "Multi-vendor CRM adapter framework for AbsoluteJS",
   "repository": {
     "type": "git",
@@ -79,10 +79,10 @@
     "typescript": "5.9.3"
   },
   "dependencies": {
-    "@absolutejs/manifest": "^0.1.0",
+    "@absolutejs/manifest": "^0.4.0",
     "@sinclair/typebox": "^0.34.0"
   },
   "absolutejs": {
-    "manifestContract": 1
+    "manifestContract": 2
   }
 }

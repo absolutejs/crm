@@ -6,7 +6,14 @@ import {
 import { Type } from "@sinclair/typebox";
 import type { CRMRuntime, CRMRuntimeOptions } from "./runtime";
 
-const tool = toolFactory<CRMRuntime>();
+export type CRMToolRuntime = {
+  /** Core runtime bound by the host. */
+  crm: CRMRuntime;
+  /** Authorized application user; never supplied by tool input. */
+  userId: string;
+};
+
+const tool = toolFactory<CRMToolRuntime>();
 
 const DEFAULT_SEARCH_LIMIT = 25;
 const MAX_LIMIT = 100;
@@ -55,8 +62,8 @@ const postgresStoreRequires = {
  * reconcileResolver / now are function-valued → wiring concerns.
  * Postgres store wirings reference the `crmQuery` binding declared by the
  * postgres-query-runner recipe (v1 user-defined-binding convention). */
-export const manifest = defineManifest<CRMRuntimeOptions, CRMRuntime>()({
-  contract: 1,
+export const manifest = defineManifest<CRMRuntimeOptions, CRMToolRuntime>()({
+  contract: 2,
   identity: {
     accent: "#e11d48",
     category: "commerce",
@@ -110,8 +117,7 @@ export const manifest = defineManifest<CRMRuntimeOptions, CRMRuntime>()({
         autoMigrate: Type.Optional(
           Type.Boolean({
             default: true,
-            description:
-              "Create the token table automatically on first use.",
+            description: "Create the token table automatically on first use.",
             title: "Auto-migrate",
           }),
         ),
@@ -244,16 +250,14 @@ export const manifest = defineManifest<CRMRuntimeOptions, CRMRuntime>()({
         autoMigrate: Type.Optional(
           Type.Boolean({
             default: true,
-            description:
-              "Create the mirror table automatically on first use.",
+            description: "Create the mirror table automatically on first use.",
             title: "Auto-migrate",
           }),
         ),
         tableName: Type.Optional(
           Type.String({
             default: "crm_local_entities",
-            description:
-              "Postgres table the local entity mirror is stored in.",
+            description: "Postgres table the local entity mirror is stored in.",
             title: "Table name",
           }),
         ),
@@ -305,14 +309,24 @@ export const manifest = defineManifest<CRMRuntimeOptions, CRMRuntime>()({
   },
   tools: {
     add_note: tool.runtime({
-      annotations: { openWorldHint: true },
+      annotations: { idempotentHint: true, openWorldHint: true },
+      authorization: {
+        approval: "policy",
+        audience: "owner",
+        destinations: ["connected-crm-account"],
+        effects: ["write", "external-network"],
+        idempotency: { mode: "host" },
+        requiredScopes: ["crm:notes:write"],
+        resource: { type: "crm-note" },
+        reversible: false,
+      },
       description:
         "Add a note to the user's CRM, optionally attached to contacts, a deal, or an account. Returns the created note with its CRM id.",
       handler: async (
-        { accountId, body, contactIds, dealId, userId, vendor },
-        crm,
+        { accountId, body, contactIds, dealId, vendor },
+        runtime,
       ) => {
-        const note = await crm.addNote(userId, vendor, {
+        const note = await runtime.crm.addNote(runtime.userId, vendor, {
           body,
           ...(accountId !== undefined ? { accountId } : {}),
           ...(contactIds !== undefined ? { contactIds } : {}),
@@ -334,19 +348,24 @@ export const manifest = defineManifest<CRMRuntimeOptions, CRMRuntime>()({
         dealId: Type.Optional(
           Type.String({ description: "CRM deal id to attach the note to." }),
         ),
-        userId: Type.String({
-          description: "The app user whose connected CRM account is used.",
-          minLength: 1,
-        }),
         vendor: vendorSchema,
       }),
     }),
     list_deals: tool.runtime({
-      annotations: { openWorldHint: true, readOnlyHint: true },
+      annotations: { idempotentHint: true, openWorldHint: true },
+      authorization: {
+        approval: "never",
+        audience: "owner",
+        destinations: ["connected-crm-account"],
+        effects: ["read", "external-network"],
+        idempotency: { mode: "host" },
+        requiredScopes: ["crm:read"],
+        reversible: false,
+      },
       description:
         "List deals from the user's connected CRM (name, stage, amount, contacts). Returns a page of items plus a cursor for the next page.",
-      handler: async ({ cursor, limit, userId, vendor }, crm) => {
-        const result = await crm.listDeals(userId, vendor, {
+      handler: async ({ cursor, limit, vendor }, runtime) => {
+        const result = await runtime.crm.listDeals(runtime.userId, vendor, {
           ...(cursor !== undefined ? { cursor } : {}),
           limit: limit ?? DEFAULT_SEARCH_LIMIT,
         });
@@ -361,22 +380,29 @@ export const manifest = defineManifest<CRMRuntimeOptions, CRMRuntime>()({
             description: "Pagination cursor from a previous page.",
           }),
         ),
-        limit: Type.Optional(
-          Type.Integer({ maximum: MAX_LIMIT, minimum: 1 }),
-        ),
-        userId: Type.String({
-          description: "The app user whose connected CRM account is used.",
-          minLength: 1,
-        }),
+        limit: Type.Optional(Type.Integer({ maximum: MAX_LIMIT, minimum: 1 })),
         vendor: vendorSchema,
       }),
     }),
     lookup_contact: tool.runtime({
-      annotations: { openWorldHint: true, readOnlyHint: true },
+      annotations: { idempotentHint: true, openWorldHint: true },
+      authorization: {
+        approval: "never",
+        audience: "owner",
+        destinations: ["connected-crm-account"],
+        effects: ["read", "external-network"],
+        idempotency: { mode: "host" },
+        requiredScopes: ["crm:read"],
+        reversible: false,
+      },
       description:
         "Find one CRM contact by exact email address. Returns the normalized contact, or reports that none matched.",
-      handler: async ({ email, userId, vendor }, crm) => {
-        const contact = await crm.lookupContactByEmail(userId, vendor, email);
+      handler: async ({ email, vendor }, runtime) => {
+        const contact = await runtime.crm.lookupContactByEmail(
+          runtime.userId,
+          vendor,
+          email,
+        );
 
         return contact === null
           ? `no ${vendor} contact found for ${email}`
@@ -384,20 +410,25 @@ export const manifest = defineManifest<CRMRuntimeOptions, CRMRuntime>()({
       },
       input: Type.Object({
         email: Type.String({ format: "email" }),
-        userId: Type.String({
-          description: "The app user whose connected CRM account is used.",
-          minLength: 1,
-        }),
         vendor: vendorSchema,
       }),
     }),
     search_contacts: tool.runtime({
-      annotations: { openWorldHint: true, readOnlyHint: true },
+      annotations: { idempotentHint: true, openWorldHint: true },
+      authorization: {
+        approval: "never",
+        audience: "owner",
+        destinations: ["connected-crm-account"],
+        effects: ["read", "external-network"],
+        idempotency: { mode: "host" },
+        requiredScopes: ["crm:read"],
+        reversible: false,
+      },
       description:
         "Search contacts in the user's connected CRM by name, email, or free text. Returns normalized contacts (same shape across every vendor).",
-      handler: async ({ limit, query, userId, vendor }, crm) => {
-        const contacts = await crm.searchContacts(
-          userId,
+      handler: async ({ limit, query, vendor }, runtime) => {
+        const contacts = await runtime.crm.searchContacts(
+          runtime.userId,
           vendor,
           query,
           limit ?? DEFAULT_SEARCH_LIMIT,
@@ -408,14 +439,8 @@ export const manifest = defineManifest<CRMRuntimeOptions, CRMRuntime>()({
           : JSON.stringify(contacts);
       },
       input: Type.Object({
-        limit: Type.Optional(
-          Type.Integer({ maximum: MAX_LIMIT, minimum: 1 }),
-        ),
+        limit: Type.Optional(Type.Integer({ maximum: MAX_LIMIT, minimum: 1 })),
         query: Type.String({ minLength: 1 }),
-        userId: Type.String({
-          description: "The app user whose connected CRM account is used.",
-          minLength: 1,
-        }),
         vendor: vendorSchema,
       }),
     }),
