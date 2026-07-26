@@ -85,16 +85,18 @@ describe("createRedisCRMLocalEntityStore", () => {
       record({ entityId: "c_3", localUpdatedAt: 300, vendor: "salesforce" }),
     );
     expect(
-      (await store.list({ entityType: "contact" })).map((r) => r.entityId).sort(),
+      (await store.list({ entityType: "contact" }))
+        .map((r) => r.entityId)
+        .sort(),
     ).toEqual(["c_1", "c_3"]);
     expect(
-      (
-        await store.list({ entityType: "contact", vendor: "hubspot" })
-      ).map((r) => r.entityId),
+      (await store.list({ entityType: "contact", vendor: "hubspot" })).map(
+        (r) => r.entityId,
+      ),
     ).toEqual(["c_1"]);
-    expect((await store.list({ sinceMs: 250 })).map((r) => r.entityId)).toEqual([
-      "c_3",
-    ]);
+    expect((await store.list({ sinceMs: 250 })).map((r) => r.entityId)).toEqual(
+      ["c_3"],
+    );
   });
 
   test("custom keyPrefix isolates keyspaces", async () => {

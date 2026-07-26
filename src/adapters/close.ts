@@ -309,7 +309,9 @@ export const createCloseCRMAdapter = async (
         ...(noteInput.accountId !== undefined
           ? { accountId: noteInput.accountId }
           : {}),
-        ...(noteInput.ownerId !== undefined ? { ownerId: noteInput.ownerId } : {}),
+        ...(noteInput.ownerId !== undefined
+          ? { ownerId: noteInput.ownerId }
+          : {}),
       };
     },
     capabilities: CLOSE_CAPABILITIES,
@@ -350,7 +352,9 @@ export const createCloseCRMAdapter = async (
     async createDeal(dealInput) {
       const leadId = dealInput.accountId;
       if (!leadId) {
-        throw new Error("Close opportunities require a lead_id (pass via accountId)");
+        throw new Error(
+          "Close opportunities require a lead_id (pass via accountId)",
+        );
       }
       const opp = await request<CloseOpportunity>("POST", "/opportunity/", {
         lead_id: leadId,
@@ -432,10 +436,7 @@ export const createCloseCRMAdapter = async (
       return mapContact(contact);
     },
     async getDeal(id) {
-      const opp = await request<CloseOpportunity>(
-        "GET",
-        `/opportunity/${id}/`,
-      );
+      const opp = await request<CloseOpportunity>("GET", `/opportunity/${id}/`);
       return mapOpportunity(opp);
     },
     async getLead(id) {
@@ -568,9 +569,7 @@ export const createCloseCRMAdapter = async (
     async updateContact(id, patch) {
       const body: Record<string, unknown> = {};
       if (patch.firstName !== undefined || patch.lastName !== undefined) {
-        body.name = [patch.firstName, patch.lastName]
-          .filter(Boolean)
-          .join(" ");
+        body.name = [patch.firstName, patch.lastName].filter(Boolean).join(" ");
       }
       if (patch.jobTitle !== undefined) body.title = patch.jobTitle;
       if (patch.emails) {
@@ -637,7 +636,4 @@ export const createCloseCRMAdapter = async (
   };
 };
 
-export {
-  mapContact as mapCloseContact,
-  mapOpportunity as mapCloseOpportunity,
-};
+export { mapContact as mapCloseContact, mapOpportunity as mapCloseOpportunity };

@@ -21,7 +21,10 @@ export type CreateVoiceLeadCapturePathwayOptions = {
   toolId?: string;
 };
 
-const SLOT_DEFINITIONS: Record<VoiceLeadCaptureField, Omit<VoicePathwaySlot, "id">> = {
+const SLOT_DEFINITIONS: Record<
+  VoiceLeadCaptureField,
+  Omit<VoicePathwaySlot, "id">
+> = {
   company: {
     description: "Caller's company name",
     prompt: "What company are you with?",
@@ -85,8 +88,7 @@ export const createVoiceLeadCapturePathway = (
     options.greeting ??
     "Thanks for reaching out — I'd love to grab a few details so we can follow up.";
   const closing =
-    options.closing ??
-    "Got it. We'll be in touch shortly — have a great day.";
+    options.closing ?? "Got it. We'll be in touch shortly — have a great day.";
 
   const slots: VoicePathwaySlot[] = allFields.map((field) => ({
     id: field,
@@ -113,7 +115,10 @@ export const createVoiceLeadCapturePathway = (
     const last = collectStates[collectStates.length - 1]!;
     last.transitions = [
       {
-        condition: { kind: "slot-filled" as const, slotId: allFields[allFields.length - 1]! },
+        condition: {
+          kind: "slot-filled" as const,
+          slotId: allFields[allFields.length - 1]!,
+        },
         to: "submit",
       },
     ];

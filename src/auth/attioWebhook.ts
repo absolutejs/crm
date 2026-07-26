@@ -45,9 +45,7 @@ const eventTypeToOp = (
   return "update";
 };
 
-const eventsFromBody = (
-  body: AttioWebhookBody | undefined,
-): AttioEvent[] => {
+const eventsFromBody = (body: AttioWebhookBody | undefined): AttioEvent[] => {
   if (!body) return [];
   if (Array.isArray(body)) return body;
   if (body.events) return body.events;

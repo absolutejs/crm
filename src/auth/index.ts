@@ -1,23 +1,17 @@
-export {
-  createCRMOAuthHandler,
-} from "./createCRMOAuthHandler";
+export { createCRMOAuthHandler } from "./createCRMOAuthHandler";
 export type {
   CRMOAuthHandler,
   CRMOAuthHandlerOptions,
   CRMOAuthPersistInput,
   CRMOAuthVendorConfig,
 } from "./createCRMOAuthHandler";
-export {
-  DEFAULT_CRM_CONTEXT_EXTRACTORS,
-} from "./contextExtractors";
+export { DEFAULT_CRM_CONTEXT_EXTRACTORS } from "./contextExtractors";
 export type {
   CRMOAuthContextExtractor,
   CRMOAuthProfileLike,
   CRMOAuthTokenResponseLike,
 } from "./contextExtractors";
-export {
-  getCRMAdapterForUser,
-} from "./getCRMAdapterForUser";
+export { getCRMAdapterForUser } from "./getCRMAdapterForUser";
 export type {
   CRMRefreshOAuth,
   CRMRefreshOAuthInput,

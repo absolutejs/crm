@@ -33,14 +33,17 @@ export const createRedisCRMLocalEntityStore = (
 
   return {
     async get(vendor, entityType, entityId) {
-      const raw = await client.get(entityKey(prefix, vendor, entityType, entityId));
+      const raw = await client.get(
+        entityKey(prefix, vendor, entityType, entityId),
+      );
       if (!raw) return null;
       return JSON.parse(raw) as CRMLocalEntityRecord;
     },
     async list(filter) {
-      const indexKey = filter?.vendor && filter.entityType
-        ? vendorEntityIndexKey(prefix, filter.vendor, filter.entityType)
-        : globalIndexKey(prefix);
+      const indexKey =
+        filter?.vendor && filter.entityType
+          ? vendorEntityIndexKey(prefix, filter.vendor, filter.entityType)
+          : globalIndexKey(prefix);
       const members = await client.smembers(indexKey);
       const out: CRMLocalEntityRecord[] = [];
       for (const member of members) {
@@ -93,7 +96,10 @@ export const createRedisCRMLocalEntityStore = (
         entityKey(prefix, vendor, entityType, entityId),
       );
       const member = `${vendor}::${entityType}::${entityId}`;
-      await client.srem(vendorEntityIndexKey(prefix, vendor, entityType), member);
+      await client.srem(
+        vendorEntityIndexKey(prefix, vendor, entityType),
+        member,
+      );
       await client.srem(globalIndexKey(prefix), member);
       return Number(removed) > 0;
     },

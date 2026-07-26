@@ -44,14 +44,9 @@ export const getCRMAdapterForUser = async (
   const skew = options.refreshSkewMs ?? 60_000;
   const factory = options.adapters[options.vendor];
   if (!factory) {
-    throw new Error(
-      `No CRM adapter registered for vendor: ${options.vendor}`,
-    );
+    throw new Error(`No CRM adapter registered for vendor: ${options.vendor}`);
   }
-  const initial = await options.tokenStore.get(
-    options.userId,
-    options.vendor,
-  );
+  const initial = await options.tokenStore.get(options.userId, options.vendor);
   if (!initial) {
     throw new Error(
       `No token stored for user=${options.userId} vendor=${options.vendor}; complete OAuth flow first`,
@@ -122,9 +117,7 @@ export const getCRMAdapterForUser = async (
     ...(record.refreshToken !== undefined
       ? { refreshToken: record.refreshToken }
       : {}),
-    ...(record.expiresAt !== undefined
-      ? { expiresAt: record.expiresAt }
-      : {}),
+    ...(record.expiresAt !== undefined ? { expiresAt: record.expiresAt } : {}),
     ...(record.context?.instanceUrl !== undefined
       ? { instanceUrl: record.context.instanceUrl }
       : {}),

@@ -143,7 +143,9 @@ describe("Attio webhook", () => {
 
   test("rejects stale timestamp", () => {
     const timestamp = String(Date.now() - 10 * 60 * 1000);
-    const sig = createHmac("sha256", SECRET).update(`${timestamp}.{}`).digest("hex");
+    const sig = createHmac("sha256", SECRET)
+      .update(`${timestamp}.{}`)
+      .digest("hex");
     expect(
       verifyAttioWebhookSignature({
         headers: {

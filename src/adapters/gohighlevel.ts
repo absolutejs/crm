@@ -153,8 +153,7 @@ export type GoHighLevelAgencyCRMAdapterOptions = {
 };
 
 export type CreateGoHighLevelCRMAdapterOptions =
-  | GoHighLevelLocationCRMAdapterOptions
-  | GoHighLevelAgencyCRMAdapterOptions;
+  GoHighLevelLocationCRMAdapterOptions | GoHighLevelAgencyCRMAdapterOptions;
 
 type GHLLocationTokenResponse = {
   access_token: string;
@@ -205,9 +204,7 @@ export const listGoHighLevelInstalledLocations = async (input: {
 };
 
 const mapContact = (contact: GHLContact): CRMContact => ({
-  emails: contact.email
-    ? [{ address: contact.email, primary: true }]
-    : [],
+  emails: contact.email ? [{ address: contact.email, primary: true }] : [],
   id: contact.id,
   phones: contact.phone ? [{ label: "work", number: contact.phone }] : [],
   vendor: VENDOR,
@@ -334,7 +331,10 @@ export const createGoHighLevelCRMAdapter = async (
       method: "POST",
       url: `${baseUrl}/oauth/locationToken`,
     });
-    const data = assertHttpOk(response, "GoHighLevel POST /oauth/locationToken");
+    const data = assertHttpOk(
+      response,
+      "GoHighLevel POST /oauth/locationToken",
+    );
     cachedLocationToken = {
       expiresAtMs: now + (data.expires_in ?? 3600) * 1000,
       value: data.access_token,
@@ -429,7 +429,9 @@ export const createGoHighLevelCRMAdapter = async (
         ...(noteInput.accountId !== undefined
           ? { accountId: noteInput.accountId }
           : {}),
-        ...(noteInput.ownerId !== undefined ? { ownerId: noteInput.ownerId } : {}),
+        ...(noteInput.ownerId !== undefined
+          ? { ownerId: noteInput.ownerId }
+          : {}),
       };
     },
     capabilities: GHL_CAPABILITIES,
@@ -469,9 +471,7 @@ export const createGoHighLevelCRMAdapter = async (
           ...(dealInput.amount !== undefined
             ? { monetaryValue: dealInput.amount }
             : {}),
-          ...(dealInput.stageId
-            ? { pipelineStageId: dealInput.stageId }
-            : {}),
+          ...(dealInput.stageId ? { pipelineStageId: dealInput.stageId } : {}),
           ...(dealInput.contactIds?.[0]
             ? { contactId: dealInput.contactIds[0] }
             : {}),

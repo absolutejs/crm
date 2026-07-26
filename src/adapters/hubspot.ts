@@ -35,10 +35,7 @@ const HUBSPOT_CAPABILITIES: CRMAdapterCapabilities = {
 export type HubSpotObjectResponse = {
   id: string;
   properties: Record<string, string | null | undefined>;
-  associations?: Record<
-    string,
-    { results: { id: string; type: string }[] }
-  >;
+  associations?: Record<string, { results: { id: string; type: string }[] }>;
 };
 
 export type HubSpotSearchResponse<T = HubSpotObjectResponse> = {
@@ -67,16 +64,16 @@ export type HubSpotPipeline = {
 export type HubSpotBasicApi = {
   create(input: {
     properties: Record<string, string | undefined>;
-    associations?: { to: { id: string }; types: { associationCategory: string; associationTypeId: number }[] }[];
+    associations?: {
+      to: { id: string };
+      types: { associationCategory: string; associationTypeId: number }[];
+    }[];
   }): Promise<HubSpotObjectResponse>;
   update(
     id: string,
     input: { properties: Record<string, string | undefined> },
   ): Promise<HubSpotObjectResponse>;
-  getById(
-    id: string,
-    properties?: string[],
-  ): Promise<HubSpotObjectResponse>;
+  getById(id: string, properties?: string[]): Promise<HubSpotObjectResponse>;
   getPage(
     limit?: number,
     after?: string,
@@ -202,9 +199,7 @@ const mapContactObject = (obj: HubSpotObjectResponse): CRMContact => {
     ...(props.lastname ? { lastName: String(props.lastname) } : {}),
     ...(props.firstname || props.lastname
       ? {
-          fullName: [props.firstname, props.lastname]
-            .filter(Boolean)
-            .join(" "),
+          fullName: [props.firstname, props.lastname].filter(Boolean).join(" "),
         }
       : {}),
     ...(props.jobtitle ? { jobTitle: String(props.jobtitle) } : {}),
@@ -421,7 +416,10 @@ export const createHubSpotCRMAdapter = async (
               {
                 to: { id: noteInput.contactIds[0] },
                 types: [
-                  { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 202 },
+                  {
+                    associationCategory: "HUBSPOT_DEFINED",
+                    associationTypeId: 202,
+                  },
                 ],
               },
             ]
@@ -429,9 +427,7 @@ export const createHubSpotCRMAdapter = async (
         properties: {
           hs_note_body: noteInput.body,
           hs_timestamp: String(Date.now()),
-          ...(noteInput.ownerId
-            ? { hubspot_owner_id: noteInput.ownerId }
-            : {}),
+          ...(noteInput.ownerId ? { hubspot_owner_id: noteInput.ownerId } : {}),
         },
       });
       return {
@@ -445,7 +441,9 @@ export const createHubSpotCRMAdapter = async (
         ...(noteInput.accountId !== undefined
           ? { accountId: noteInput.accountId }
           : {}),
-        ...(noteInput.ownerId !== undefined ? { ownerId: noteInput.ownerId } : {}),
+        ...(noteInput.ownerId !== undefined
+          ? { ownerId: noteInput.ownerId }
+          : {}),
       } satisfies CRMNote;
     },
     capabilities: HUBSPOT_CAPABILITIES,
@@ -497,7 +495,9 @@ export const createHubSpotCRMAdapter = async (
       if (dealInput.stageId) properties.dealstage = dealInput.stageId;
       if (dealInput.pipelineId) properties.pipeline = dealInput.pipelineId;
       if (dealInput.expectedCloseAt) {
-        properties.closedate = new Date(dealInput.expectedCloseAt).toISOString();
+        properties.closedate = new Date(
+          dealInput.expectedCloseAt,
+        ).toISOString();
       }
       if (dealInput.ownerId) properties.hubspot_owner_id = dealInput.ownerId;
       const obj = await client.crm.deals.basicApi.create({
@@ -506,7 +506,10 @@ export const createHubSpotCRMAdapter = async (
               {
                 to: { id: dealInput.contactIds[0] },
                 types: [
-                  { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 3 },
+                  {
+                    associationCategory: "HUBSPOT_DEFINED",
+                    associationTypeId: 3,
+                  },
                 ],
               },
             ]
@@ -539,7 +542,10 @@ export const createHubSpotCRMAdapter = async (
               {
                 to: { id: taskInput.contactIds[0] },
                 types: [
-                  { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 204 },
+                  {
+                    associationCategory: "HUBSPOT_DEFINED",
+                    associationTypeId: 204,
+                  },
                 ],
               },
             ]
@@ -558,9 +564,7 @@ export const createHubSpotCRMAdapter = async (
           ...(taskInput.description
             ? { hs_task_body: taskInput.description }
             : {}),
-          ...(taskInput.ownerId
-            ? { hubspot_owner_id: taskInput.ownerId }
-            : {}),
+          ...(taskInput.ownerId ? { hubspot_owner_id: taskInput.ownerId } : {}),
         },
       });
       return { ...taskInput, id: obj.id, vendor: VENDOR } satisfies CRMTask;
@@ -701,14 +705,16 @@ export const createHubSpotCRMAdapter = async (
       const properties: Record<string, string | undefined> = {
         hs_timestamp: String(activityInput.occurredAt),
       };
-      if (activityInput.subject) properties.hs_call_title = activityInput.subject;
+      if (activityInput.subject)
+        properties.hs_call_title = activityInput.subject;
       if (activityInput.body) properties.hs_call_body = activityInput.body;
       if (activityInput.durationSeconds !== undefined) {
         properties.hs_call_duration = String(
           activityInput.durationSeconds * 1000,
         );
       }
-      if (activityInput.outcome) properties.hs_call_disposition = activityInput.outcome;
+      if (activityInput.outcome)
+        properties.hs_call_disposition = activityInput.outcome;
       if (activityInput.ownerId)
         properties.hubspot_owner_id = activityInput.ownerId;
       const obj = await client.crm.objects.calls.basicApi.create({
@@ -717,7 +723,10 @@ export const createHubSpotCRMAdapter = async (
               {
                 to: { id: activityInput.contactIds[0] },
                 types: [
-                  { associationCategory: "HUBSPOT_DEFINED", associationTypeId: 194 },
+                  {
+                    associationCategory: "HUBSPOT_DEFINED",
+                    associationTypeId: 194,
+                  },
                 ],
               },
             ]
@@ -742,9 +751,33 @@ export const createHubSpotCRMAdapter = async (
     async searchContacts(query, limit = 10) {
       const result = await client.crm.contacts.searchApi.doSearch({
         filterGroups: [
-          { filters: [{ operator: "CONTAINS_TOKEN", propertyName: "email", value: query }] },
-          { filters: [{ operator: "CONTAINS_TOKEN", propertyName: "firstname", value: query }] },
-          { filters: [{ operator: "CONTAINS_TOKEN", propertyName: "lastname", value: query }] },
+          {
+            filters: [
+              {
+                operator: "CONTAINS_TOKEN",
+                propertyName: "email",
+                value: query,
+              },
+            ],
+          },
+          {
+            filters: [
+              {
+                operator: "CONTAINS_TOKEN",
+                propertyName: "firstname",
+                value: query,
+              },
+            ],
+          },
+          {
+            filters: [
+              {
+                operator: "CONTAINS_TOKEN",
+                propertyName: "lastname",
+                value: query,
+              },
+            ],
+          },
         ],
         limit,
         properties: CONTACT_PROPERTY_NAMES,
@@ -770,7 +803,9 @@ export const createHubSpotCRMAdapter = async (
         if (addr.postalCode !== undefined) properties.zip = addr.postalCode;
         if (addr.country !== undefined) properties.country = addr.country;
       }
-      const obj = await client.crm.companies.basicApi.update(id, { properties });
+      const obj = await client.crm.companies.basicApi.update(id, {
+        properties,
+      });
       return mapCompanyObject(obj);
     },
     async updateActivity(id, patch) {
@@ -813,7 +848,8 @@ export const createHubSpotCRMAdapter = async (
       if (patch.title !== undefined) properties.dealname = patch.title;
       if (patch.amount !== undefined) properties.amount = String(patch.amount);
       if (patch.stageId !== undefined) properties.dealstage = patch.stageId;
-      if (patch.pipelineId !== undefined) properties.pipeline = patch.pipelineId;
+      if (patch.pipelineId !== undefined)
+        properties.pipeline = patch.pipelineId;
       if (patch.expectedCloseAt !== undefined) {
         properties.closedate = new Date(patch.expectedCloseAt).toISOString();
       }

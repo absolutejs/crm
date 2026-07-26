@@ -33,17 +33,11 @@ type MondayWebhookBody = {
 };
 
 const base64UrlToBuffer = (input: string): Buffer => {
-  const padded =
-    input + "=".repeat((4 - (input.length % 4)) % 4);
-  return Buffer.from(
-    padded.replace(/-/gu, "+").replace(/_/gu, "/"),
-    "base64",
-  );
+  const padded = input + "=".repeat((4 - (input.length % 4)) % 4);
+  return Buffer.from(padded.replace(/-/gu, "+").replace(/_/gu, "/"), "base64");
 };
 
-const typeToOp = (
-  type: string | undefined,
-): "create" | "update" | "delete" => {
+const typeToOp = (type: string | undefined): "create" | "update" | "delete" => {
   if (type === "create_pulse") return "create";
   if (type === "delete_pulse") return "delete";
   return "update";
@@ -61,7 +55,11 @@ export const verifyMondayWebhookSignature: CRMWebhookSignatureVerifier = ({
     : authorization;
   const parts = token.split(".");
   if (parts.length !== 3) return false;
-  const [headerB64, payloadB64, signatureB64] = parts as [string, string, string];
+  const [headerB64, payloadB64, signatureB64] = parts as [
+    string,
+    string,
+    string,
+  ];
   const expected = createHmac("sha256", secret)
     .update(`${headerB64}.${payloadB64}`)
     .digest("base64")
@@ -69,8 +67,10 @@ export const verifyMondayWebhookSignature: CRMWebhookSignatureVerifier = ({
     .replace(/\+/gu, "-")
     .replace(/\//gu, "_");
   const provided = signatureB64.replace(/=+$/u, "");
-  return timingSafeEqualString(provided, expected) &&
-    base64UrlToBuffer(payloadB64).length > 0;
+  return (
+    timingSafeEqualString(provided, expected) &&
+    base64UrlToBuffer(payloadB64).length > 0
+  );
 };
 
 export const normalizeMondayWebhookPayload: CRMWebhookNormalizer = ({

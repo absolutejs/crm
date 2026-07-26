@@ -26,7 +26,9 @@ const fakeClient = (
   },
 });
 
-const baseInput = (vendor: "hubspot" | "salesforce" | "pipedrive" | "zoho" | "gohighlevel"): CRMRefreshOAuthInput => ({
+const baseInput = (
+  vendor: "hubspot" | "salesforce" | "pipedrive" | "zoho" | "gohighlevel",
+): CRMRefreshOAuthInput => ({
   currentRecord: {
     accessToken: "old",
     createdAt: 0,
@@ -52,9 +54,7 @@ describe("single-vendor refresh helpers", () => {
     const result = await refresh(baseInput("salesforce"));
     expect(result.accessToken).toBe("new");
     expect(result.expiresAt).toBe(1_000_000 + 3_600_000);
-    expect(result.context?.instanceUrl).toBe(
-      "https://acme.my.salesforce.com",
-    );
+    expect(result.context?.instanceUrl).toBe("https://acme.my.salesforce.com");
   });
 
   test("HubSpot: rotates refresh_token + captures hub_id from token response", async () => {

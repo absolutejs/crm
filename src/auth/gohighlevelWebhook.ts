@@ -41,9 +41,7 @@ const TYPE_TO_ENTITY: Record<string, CRMEntityType> = {
   OutboundMessage: "activity",
 };
 
-const typeToOp = (
-  type: string | undefined,
-): "create" | "update" | "delete" => {
+const typeToOp = (type: string | undefined): "create" | "update" | "delete" => {
   if (!type) return "update";
   if (type.endsWith("Create")) return "create";
   if (type.endsWith("Delete")) return "delete";
@@ -56,11 +54,7 @@ export const verifyGoHighLevelWebhookSignature: CRMWebhookSignatureVerifier = ({
   secret,
 }) => {
   if (!secret) return false;
-  const signature = headerValue(
-    headers,
-    "x-wh-signature",
-    "x-ghl-signature",
-  );
+  const signature = headerValue(headers, "x-wh-signature", "x-ghl-signature");
   if (!signature) return false;
   const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
   return timingSafeEqualString(signature, expected);

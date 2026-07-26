@@ -61,9 +61,9 @@ describe("createGoHighLevelCRMAdapter", () => {
   test("createDeal requires pipelineId", async () => {
     const mock = mockHttp();
     const adapter = await createGoHighLevelCRMAdapter(baseOptions(mock.http));
-    await expect(
-      adapter.createDeal({ title: "Acme deal" }),
-    ).rejects.toThrow(/pipelineId/);
+    await expect(adapter.createDeal({ title: "Acme deal" })).rejects.toThrow(
+      /pipelineId/,
+    );
   });
 
   test("createDeal POSTs to /opportunities/ with monetaryValue + status", async () => {

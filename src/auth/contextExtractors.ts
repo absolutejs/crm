@@ -20,7 +20,10 @@ export type CRMOAuthContextExtractor = (input: {
 const stringOrUndefined = (value: unknown): string | undefined =>
   typeof value === "string" ? value : undefined;
 
-const extractSalesforce: CRMOAuthContextExtractor = ({ tokenResponse, profile }) => {
+const extractSalesforce: CRMOAuthContextExtractor = ({
+  tokenResponse,
+  profile,
+}) => {
   const instanceUrl =
     stringOrUndefined(tokenResponse.instance_url) ??
     stringOrUndefined(
@@ -59,7 +62,10 @@ const extractZoho: CRMOAuthContextExtractor = ({ tokenResponse }) => {
   };
 };
 
-const extractGoHighLevel: CRMOAuthContextExtractor = ({ tokenResponse, profile }) => {
+const extractGoHighLevel: CRMOAuthContextExtractor = ({
+  tokenResponse,
+  profile,
+}) => {
   const locationId =
     stringOrUndefined(tokenResponse.locationId) ??
     stringOrUndefined(profile.locationId);

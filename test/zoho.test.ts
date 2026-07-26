@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  createZohoCRMAdapter,
-  mapZohoContact,
-} from "../src/adapters/zoho";
+import { createZohoCRMAdapter, mapZohoContact } from "../src/adapters/zoho";
 import type { CRMHttpClient } from "../src/adapters/_http";
 
 const mockHttp = () => {
@@ -47,7 +44,9 @@ describe("createZohoCRMAdapter", () => {
       lastName: "B",
       phones: [],
     });
-    expect(mock.calls[0]?.url).toContain("https://www.zohoapis.com/crm/v2/Contacts");
+    expect(mock.calls[0]?.url).toContain(
+      "https://www.zohoapis.com/crm/v2/Contacts",
+    );
   });
 
   test("custom region builds the right URL", async () => {
@@ -121,9 +120,9 @@ describe("createZohoCRMAdapter", () => {
   test("addNote throws when no parent ID provided", async () => {
     const mock = mockHttp();
     const adapter = await base(mock.http);
-    await expect(
-      adapter.addNote({ body: "orphan" }),
-    ).rejects.toThrow(/contactId|dealId|accountId/);
+    await expect(adapter.addNote({ body: "orphan" })).rejects.toThrow(
+      /contactId|dealId|accountId/,
+    );
   });
 
   test("lookupContactByEmail GETs /Contacts/search?email=", async () => {

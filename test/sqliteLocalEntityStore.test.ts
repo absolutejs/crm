@@ -90,9 +90,9 @@ describe("createSqliteCRMLocalEntityStore", () => {
       tableName: "my_entities",
     });
     await store.put(record());
-    const rows = db
-      .prepare("SELECT entity_id FROM my_entities")
-      .all() as { entity_id: string }[];
+    const rows = db.prepare("SELECT entity_id FROM my_entities").all() as {
+      entity_id: string;
+    }[];
     expect(rows).toHaveLength(1);
   });
 });

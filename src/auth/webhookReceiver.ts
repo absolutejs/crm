@@ -40,7 +40,10 @@ export type CRMWebhookInvocation = {
 
 export type CRMWebhookHandleResult =
   | { ok: true; events: CRMChangeEvent[] }
-  | { ok: false; reason: "unknown-vendor" | "signature-invalid" | "parse-error" };
+  | {
+      ok: false;
+      reason: "unknown-vendor" | "signature-invalid" | "parse-error";
+    };
 
 export const createCRMWebhookReceiver = (
   options: CRMWebhookReceiverOptions,
@@ -69,7 +72,8 @@ export const createCRMWebhookReceiver = (
     }
     let parsed: unknown;
     try {
-      parsed = invocation.rawBody.length > 0 ? JSON.parse(invocation.rawBody) : null;
+      parsed =
+        invocation.rawBody.length > 0 ? JSON.parse(invocation.rawBody) : null;
     } catch {
       return { ok: false, reason: "parse-error" };
     }
@@ -97,6 +101,5 @@ export const createCRMWebhookReceiver = (
 export type CRMWebhookReceiver = ReturnType<typeof createCRMWebhookReceiver>;
 
 export const createPermissiveCRMWebhookVerifier =
-  (): CRMWebhookSignatureVerifier =>
-  () =>
+  (): CRMWebhookSignatureVerifier => () =>
     true;

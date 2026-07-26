@@ -303,13 +303,15 @@ const simpleIds = (pipeline = "1"): EntityIds => ({
 
 const harnesses: Harness[] = [
   {
-    build: () => createAttioCRMAdapter({ accessToken: "t", httpClient: attioHttp }),
+    build: () =>
+      createAttioCRMAdapter({ accessToken: "t", httpClient: attioHttp }),
     ids: simpleIds(),
     immutableWrites: ["updateActivity", "updateNote"],
     vendor: "attio",
   },
   {
-    build: () => createCloseCRMAdapter({ accessToken: "t", httpClient: closeHttp }),
+    build: () =>
+      createCloseCRMAdapter({ accessToken: "t", httpClient: closeHttp }),
     ids: simpleIds(),
     immutableWrites: [],
     vendor: "close",
@@ -335,7 +337,11 @@ const harnesses: Harness[] = [
     vendor: "gohighlevel",
   },
   {
-    build: () => createHubSpotCRMAdapter({ accessToken: "t", client: makeHubSpotClient() }),
+    build: () =>
+      createHubSpotCRMAdapter({
+        accessToken: "t",
+        client: makeHubSpotClient(),
+      }),
     ids: simpleIds(),
     immutableWrites: [],
     vendor: "hubspot",
@@ -381,7 +387,12 @@ const harnesses: Harness[] = [
     vendor: "salesforce",
   },
   {
-    build: () => createZohoCRMAdapter({ accessToken: "t", httpClient: zohoHttp, region: "com" }),
+    build: () =>
+      createZohoCRMAdapter({
+        accessToken: "t",
+        httpClient: zohoHttp,
+        region: "com",
+      }),
     ids: simpleIds(),
     immutableWrites: [],
     vendor: "zoho",
@@ -539,7 +550,10 @@ for (const harness of harnesses) {
       const adapter = await harness.build();
       expectEntity(await adapter.createContact(contactInput), v);
       expectReadable(await adapter.getContact(ids.contact), v);
-      expectEntity(await adapter.updateContact(ids.contact, { firstName: "New" }), v);
+      expectEntity(
+        await adapter.updateContact(ids.contact, { firstName: "New" }),
+        v,
+      );
       expect(await adapter.deleteContact(ids.contact)).toBeUndefined();
       expect(Array.isArray((await adapter.listContacts()).items)).toBe(true);
       expect(Array.isArray(await adapter.searchContacts("q"))).toBe(true);
@@ -564,7 +578,11 @@ for (const harness of harnesses) {
       expectEntity(await adapter.createDeal(dealInput), v);
       expectReadable(await adapter.getDeal(ids.deal), v);
       expectEntity(
-        await adapter.updateDeal(ids.deal, { amount: 50, stageId: "s1", title: "New" }),
+        await adapter.updateDeal(ids.deal, {
+          amount: 50,
+          stageId: "s1",
+          title: "New",
+        }),
         v,
       );
       expect(await adapter.deleteDeal(ids.deal)).toBeUndefined();
@@ -576,7 +594,10 @@ for (const harness of harnesses) {
       if (adapter.capabilities.supportsAccounts) {
         expectEntity(await adapter.createAccount(accountInput), v);
         expectReadable(await adapter.getAccount(ids.account), v);
-        expectEntity(await adapter.updateAccount(ids.account, { name: "New" }), v);
+        expectEntity(
+          await adapter.updateAccount(ids.account, { name: "New" }),
+          v,
+        );
       } else {
         await expect(adapter.createAccount(accountInput)).rejects.toThrow();
         await expect(
@@ -592,9 +613,15 @@ for (const harness of harnesses) {
       const adapter = await harness.build();
       expectEntity(await adapter.logActivity(activityInput), v);
       expectReadable(await adapter.getActivity(ids.activity), v);
-      const patch = { body: "x", contactIds: [ids.contact], durationSeconds: 30 };
+      const patch = {
+        body: "x",
+        contactIds: [ids.contact],
+        durationSeconds: 30,
+      };
       if (harness.immutableWrites.includes("updateActivity")) {
-        await expect(adapter.updateActivity(ids.activity, patch)).rejects.toThrow();
+        await expect(
+          adapter.updateActivity(ids.activity, patch),
+        ).rejects.toThrow();
       } else {
         expectEntity(await adapter.updateActivity(ids.activity, patch), v);
       }
@@ -617,7 +644,11 @@ for (const harness of harnesses) {
       const adapter = await harness.build();
       expectEntity(await adapter.createTask(taskInput), v);
       expectReadable(await adapter.getTask(ids.task), v);
-      const patch = { contactIds: [ids.contact], status: "completed", subject: "x" };
+      const patch = {
+        contactIds: [ids.contact],
+        status: "completed",
+        subject: "x",
+      };
       if (harness.immutableWrites.includes("updateTask")) {
         await expect(adapter.updateTask(ids.task, patch)).rejects.toThrow();
       } else {

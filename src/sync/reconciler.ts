@@ -1,7 +1,4 @@
-import type {
-  CRMLocalEntityRecord,
-  CRMLocalEntityStore,
-} from "../stores";
+import type { CRMLocalEntityRecord, CRMLocalEntityStore } from "../stores";
 import type { CRMEntityType, CRMVendor } from "../types";
 import type { CRMChangeEvent, CRMSyncJob, CRMSyncQueue } from "./index";
 
@@ -21,9 +18,7 @@ export type CRMReconcileConflictResolverInput = {
 
 export type CRMReconcileConflictResolver = (
   input: CRMReconcileConflictResolverInput,
-) =>
-  | CRMReconcileConflictResolution
-  | Promise<CRMReconcileConflictResolution>;
+) => CRMReconcileConflictResolution | Promise<CRMReconcileConflictResolution>;
 
 export const remoteWinsReconcileResolver: CRMReconcileConflictResolver = ({
   remote,
@@ -70,7 +65,10 @@ export type CRMReconcileResult =
     };
 
 export type CRMReconcilerEvent =
-  | { type: "applied"; result: Extract<CRMReconcileResult, { action: "applied" }> }
+  | {
+      type: "applied";
+      result: Extract<CRMReconcileResult, { action: "applied" }>;
+    }
   | { type: "skipped-echo"; entityId: string; reason: string }
   | { type: "deleted"; entityId: string; vendor: CRMVendor };
 
@@ -82,9 +80,7 @@ export type CreateCRMReconcilerOptions = {
   now?: () => number;
 };
 
-export const createCRMReconciler = (
-  options: CreateCRMReconcilerOptions,
-) => {
+export const createCRMReconciler = (options: CreateCRMReconcilerOptions) => {
   const now = options.now ?? (() => Date.now());
   const resolver = options.conflictResolver ?? remoteWinsReconcileResolver;
   const echoWindow = options.echoSuppressionWindowMs ?? 5_000;

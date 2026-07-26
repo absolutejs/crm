@@ -27,17 +27,19 @@ type ZohoNotification = {
   token?: string;
 };
 
-type ZohoWebhookBody = ZohoNotification | { notifications?: ZohoNotification[] };
+type ZohoWebhookBody =
+  ZohoNotification | { notifications?: ZohoNotification[] };
 
-const ZOHO_MODULE_MAP: Partial<Record<ZohoNotificationModule, CRMEntityType>> = {
-  Accounts: "account",
-  Calls: "activity",
-  Contacts: "contact",
-  Deals: "deal",
-  Leads: "lead",
-  Notes: "note",
-  Tasks: "task",
-};
+const ZOHO_MODULE_MAP: Partial<Record<ZohoNotificationModule, CRMEntityType>> =
+  {
+    Accounts: "account",
+    Calls: "activity",
+    Contacts: "contact",
+    Deals: "deal",
+    Leads: "lead",
+    Notes: "note",
+    Tasks: "task",
+  };
 
 const notificationsFromBody = (
   body: ZohoWebhookBody | undefined,
@@ -50,9 +52,7 @@ const notificationsFromBody = (
   return [];
 };
 
-const opToCrmOp = (
-  op: string | undefined,
-): "create" | "update" | "delete" => {
+const opToCrmOp = (op: string | undefined): "create" | "update" | "delete" => {
   if (op === "insert") return "create";
   if (op === "delete") return "delete";
   return "update";

@@ -77,7 +77,9 @@ type JobRow = {
 
 const rowToJob = (row: JobRow): CRMSyncJob => ({
   attempts: row.attempts,
-  ...(row.completed_at_ms !== null ? { completedAtMs: row.completed_at_ms } : {}),
+  ...(row.completed_at_ms !== null
+    ? { completedAtMs: row.completed_at_ms }
+    : {}),
   enqueuedAtMs: row.enqueued_at_ms,
   id: row.id,
   idempotencyKey: row.idempotency_key,
@@ -111,9 +113,7 @@ export const createSqliteCRMSyncQueue = (
   const findByIdempotency = options.db.prepare(
     `SELECT * FROM ${jobs} WHERE idempotency_key = ?`,
   );
-  const findById = options.db.prepare(
-    `SELECT * FROM ${jobs} WHERE id = ?`,
-  );
+  const findById = options.db.prepare(`SELECT * FROM ${jobs} WHERE id = ?`);
   const claimNextStmt = options.db.prepare(
     `SELECT * FROM ${jobs} WHERE status = 'pending' AND not_before_ms <= ?
      ORDER BY not_before_ms ASC LIMIT 1`,
@@ -165,7 +165,8 @@ export const createSqliteCRMSyncQueue = (
     async cancel(jobId) {
       const row = findById.get(jobId) as JobRow | undefined;
       if (!row) return false;
-      if (row.status === "completed" || row.status === "cancelled") return false;
+      if (row.status === "completed" || row.status === "cancelled")
+        return false;
       const job = rowToJob(row);
       job.status = "cancelled";
       writeJob(job);
@@ -193,8 +194,7 @@ export const createSqliteCRMSyncQueue = (
     },
     async enqueue(input) {
       const existing = findByIdempotency.get(input.idempotencyKey) as
-        | JobRow
-        | undefined;
+        JobRow | undefined;
       if (existing) return rowToJob(existing);
       const at = input.enqueuedAtMs ?? now();
       const job: CRMSyncJob = {

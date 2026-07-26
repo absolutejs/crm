@@ -27,8 +27,7 @@ export type CreateRedisCRMSyncQueueOptions = {
 };
 
 const jobKey = (prefix: string, id: string) => `${prefix}:job:${id}`;
-const idempotencyKey = (prefix: string, key: string) =>
-  `${prefix}:idem:${key}`;
+const idempotencyKey = (prefix: string, key: string) => `${prefix}:idem:${key}`;
 const pendingZsetKey = (prefix: string) => `${prefix}:pending`;
 const statusSetKey = (prefix: string, status: CRMSyncJobStatus) =>
   `${prefix}:status:${status}`;
@@ -73,7 +72,8 @@ export const createRedisCRMSyncQueue = (
     async cancel(jobId) {
       const job = await load(jobId);
       if (!job) return false;
-      if (job.status === "completed" || job.status === "cancelled") return false;
+      if (job.status === "completed" || job.status === "cancelled")
+        return false;
       await clearOldStatus(jobId, job.status);
       job.status = "cancelled";
       await persist(job);

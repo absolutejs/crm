@@ -5,11 +5,7 @@ export type {
   CRMHttpResponse,
 } from "./_http";
 export { CRMHttpError, createFetchCRMHttpClient } from "./_http";
-export {
-  createAttioCRMAdapter,
-  mapAttioDeal,
-  mapAttioPerson,
-} from "./attio";
+export { createAttioCRMAdapter, mapAttioDeal, mapAttioPerson } from "./attio";
 export type { CreateAttioCRMAdapterOptions } from "./attio";
 export {
   createCloseCRMAdapter,
@@ -48,10 +44,7 @@ export type {
   HubSpotSearchApi,
   HubSpotSearchResponse,
 } from "./hubspot";
-export {
-  createMondayCRMAdapter,
-  mapMondayItemToContact,
-} from "./monday";
+export { createMondayCRMAdapter, mapMondayItemToContact } from "./monday";
 export type {
   CreateMondayCRMAdapterOptions,
   VoiceMondayColumnMapping,
@@ -62,11 +55,7 @@ export {
   mapPipedrivePersonToContact,
 } from "./pipedrive";
 export type { CreatePipedriveCRMAdapterOptions } from "./pipedrive";
-export {
-  createZohoCRMAdapter,
-  mapZohoContact,
-  mapZohoDeal,
-} from "./zoho";
+export { createZohoCRMAdapter, mapZohoContact, mapZohoDeal } from "./zoho";
 export type { CreateZohoCRMAdapterOptions } from "./zoho";
 export {
   createSalesforceCRMAdapter,

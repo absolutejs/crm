@@ -48,9 +48,10 @@ describe("createSqliteCRMTokenStore (bun:sqlite)", () => {
       "hubspot",
       "salesforce",
     ]);
-    expect(
-      (await store.listUsersForVendor?.("hubspot"))?.sort(),
-    ).toEqual(["user_1", "user_2"]);
+    expect((await store.listUsersForVendor?.("hubspot"))?.sort()).toEqual([
+      "user_1",
+      "user_2",
+    ]);
   });
 
   test("custom tableName is honored", async () => {
@@ -60,9 +61,9 @@ describe("createSqliteCRMTokenStore (bun:sqlite)", () => {
       tableName: "my_crm",
     });
     await store.put({ ...baseRecord });
-    const rows = db
-      .prepare("SELECT user_id FROM my_crm")
-      .all() as { user_id: string }[];
+    const rows = db.prepare("SELECT user_id FROM my_crm").all() as {
+      user_id: string;
+    }[];
     expect(rows).toHaveLength(1);
   });
 });

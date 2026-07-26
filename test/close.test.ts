@@ -110,7 +110,12 @@ describe("createCloseCRMAdapter", () => {
     const mock = mockHttp();
     mock.seed("GET https://api.close.com/api/v1/status/opportunity/", {
       data: [
-        { id: "stat_1", label: "Active", name: "active", status_type: "active" },
+        {
+          id: "stat_1",
+          label: "Active",
+          name: "active",
+          status_type: "active",
+        },
         { id: "stat_2", label: "Won", name: "won", status_type: "won" },
       ],
     });

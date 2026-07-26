@@ -1,6 +1,6 @@
 {
   "name": "@absolutejs/crm",
-  "version": "0.0.10-alpha.9",
+  "version": "0.0.10-alpha.10",
   "description": "Multi-vendor CRM adapter framework for AbsoluteJS",
   "repository": {
     "type": "git",
@@ -33,12 +33,14 @@
     "./manifest.json": "./dist/manifest.json"
   },
   "scripts": {
-    "build": "rm -rf dist && bun build src/index.ts src/manifest.ts --root ./src --outdir dist --target=bun --external elysia --external citra --external @absolutejs/auth --external @absolutejs/voice --external jsforce --external @hubspot/api-client --external @mondaydotcomorg/api && tsc --emitDeclarationOnly --project tsconfig.json && absolute-manifest emit",
+    "build": "rm -rf dist && bun build src/index.ts src/manifest.ts --root ./src --outdir dist --target=bun --external @absolutejs/manifest --external '@absolutejs/manifest/*' --external @absolutejs/voice --external '@absolutejs/voice/*' --external @hubspot/api-client --external '@hubspot/api-client/*' --external @mondaydotcomorg/api --external '@mondaydotcomorg/api/*' --external @sinclair/typebox --external '@sinclair/typebox/*' --external jsforce --external 'jsforce/*' && tsc --emitDeclarationOnly --project tsconfig.json && absolute-manifest emit",
     "config": "absolute config",
     "test": "bun test",
     "typecheck": "bun run tsc --noEmit",
-    "lint": "echo 'lint not yet wired'",
-    "format": "prettier --write \"./**/*.{js,ts,json}\""
+    "format": "prettier --write \"./**/*.{js,ts,json,md}\"",
+    "verify-package": "absolute-manifest verify-package",
+    "check:package": "bun run format && bun run typecheck && bun run test && bun run verify-package && bun run build && bun run verify-package --artifacts",
+    "release": "bun run check:package && npm publish --access public --tag alpha"
   },
   "keywords": [
     "crm",
@@ -50,39 +52,75 @@
     "elysia"
   ],
   "peerDependencies": {
-    "@absolutejs/auth": ">=0.56.17 <1",
     "@absolutejs/voice": ">=0.0.22-beta.643 <0.1",
-    "citra": ">=0.29.7 <1",
-    "elysia": ">=1.4.26"
+    "@hubspot/api-client": ">=12 <15",
+    "jsforce": ">=3 <4"
   },
   "peerDependenciesMeta": {
     "@absolutejs/voice": {
       "optional": true
     },
-    "elysia": {
+    "@hubspot/api-client": {
+      "optional": true
+    },
+    "jsforce": {
       "optional": true
     }
   },
-  "optionalDependencies": {
-    "@hubspot/api-client": "^12.0.0",
-    "@mondaydotcomorg/api": "^9.0.0",
-    "jsforce": "^3.0.0"
-  },
   "devDependencies": {
-    "@absolutejs/absolute": "^0.19.0-beta.1051",
-    "@absolutejs/auth": "0.56.17",
-    "@absolutejs/voice": "0.0.22-beta.644",
+    "@absolutejs/absolute": "0.19.0-beta.1115",
+    "@absolutejs/voice": "0.0.22-beta.647",
+    "@hubspot/api-client": "14.0.1",
     "@types/bun": "1.3.14",
-    "citra": "0.29.7",
     "drizzle-orm": "1.0.0-rc.4",
-    "elysia": "1.4.28",
+    "jsforce": "3.10.19",
+    "prettier": "3.9.6",
     "typescript": "5.9.3"
   },
   "dependencies": {
-    "@absolutejs/manifest": "^0.4.0",
-    "@sinclair/typebox": "^0.34.0"
+    "@absolutejs/manifest": "0.7.2",
+    "@sinclair/typebox": "0.34.52"
   },
   "absolutejs": {
-    "manifestContract": 2
+    "manifestContract": 2,
+    "runtimePeers": {
+      "@absolutejs/voice": {
+        "artifactImports": [],
+        "buildExternals": [
+          "@absolutejs/voice",
+          "@absolutejs/voice/*"
+        ],
+        "optional": true,
+        "range": ">=0.0.22-beta.643 <0.1",
+        "tested": "0.0.22-beta.647"
+      },
+      "@hubspot/api-client": {
+        "artifactImports": [
+          "@hubspot/api-client"
+        ],
+        "buildExternals": [
+          "@hubspot/api-client",
+          "@hubspot/api-client/*"
+        ],
+        "optional": true,
+        "range": ">=12 <15",
+        "tested": "14.0.1"
+      },
+      "jsforce": {
+        "artifactImports": [
+          "jsforce"
+        ],
+        "buildExternals": [
+          "jsforce",
+          "jsforce/*"
+        ],
+        "optional": true,
+        "range": ">=3 <4",
+        "tested": "3.10.19"
+      }
+    }
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

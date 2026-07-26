@@ -172,7 +172,8 @@ const mapPersonToContact = (person: PipedrivePerson): CRMContact => {
         : undefined;
   return {
     emails:
-      person.email?.map((e) => ({ address: e.value, primary: e.primary })) ?? [],
+      person.email?.map((e) => ({ address: e.value, primary: e.primary })) ??
+      [],
     id: String(person.id),
     phones:
       person.phone?.map((p) => ({
@@ -217,11 +218,7 @@ const mapDealToCRM = (deal: PipedriveDeal): CRMDeal => {
       ? { expectedCloseAt: new Date(deal.expected_close_date).getTime() }
       : {}),
     status:
-      deal.status === "won"
-        ? "won"
-        : deal.status === "lost"
-          ? "lost"
-          : "open",
+      deal.status === "won" ? "won" : deal.status === "lost" ? "lost" : "open",
   };
 };
 
@@ -243,9 +240,7 @@ const mapLeadToCRM = (lead: PipedriveLead): CRMLead => ({
     : {}),
   ...(lead.owner_id !== undefined ? { ownerId: String(lead.owner_id) } : {}),
   ...(lead.source_name ? { source: lead.source_name } : {}),
-  ...(lead.add_time
-    ? { createdAt: new Date(lead.add_time).getTime() }
-    : {}),
+  ...(lead.add_time ? { createdAt: new Date(lead.add_time).getTime() } : {}),
   ...(lead.update_time
     ? { updatedAt: new Date(lead.update_time).getTime() }
     : {}),
@@ -443,7 +438,9 @@ export const createPipedriveCRMAdapter = async (
         ...(noteInput.accountId !== undefined
           ? { accountId: noteInput.accountId }
           : {}),
-        ...(noteInput.ownerId !== undefined ? { ownerId: noteInput.ownerId } : {}),
+        ...(noteInput.ownerId !== undefined
+          ? { ownerId: noteInput.ownerId }
+          : {}),
       };
     },
     capabilities: PIPEDRIVE_CAPABILITIES,
@@ -501,9 +498,7 @@ export const createPipedriveCRMAdapter = async (
         ...(contactInput.firstName
           ? { first_name: contactInput.firstName }
           : {}),
-        ...(contactInput.lastName
-          ? { last_name: contactInput.lastName }
-          : {}),
+        ...(contactInput.lastName ? { last_name: contactInput.lastName } : {}),
         ...(contactInput.jobTitle ? { job_title: contactInput.jobTitle } : {}),
         ...(contactInput.ownerId
           ? { owner_id: Number(contactInput.ownerId) }
@@ -553,7 +548,11 @@ export const createPipedriveCRMAdapter = async (
           : {}),
         ...(leadInput.source ? { source_name: leadInput.source } : {}),
       });
-      return { ...leadInput, id: String(lead.id), vendor: VENDOR } satisfies CRMLead;
+      return {
+        ...leadInput,
+        id: String(lead.id),
+        vendor: VENDOR,
+      } satisfies CRMLead;
     },
     async createTask(taskInput) {
       const activity = await request<{ id: number }>("POST", "/activities", {

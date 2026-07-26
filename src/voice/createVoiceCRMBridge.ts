@@ -48,7 +48,9 @@ export const createVoiceCRMBridge = (
       const lead = await adapter.createLead({
         emails: input.email ? [{ address: input.email, primary: true }] : [],
         phones: input.phone ? [{ label: "work", number: input.phone }] : [],
-        ...(input.firstName !== undefined ? { firstName: input.firstName } : {}),
+        ...(input.firstName !== undefined
+          ? { firstName: input.firstName }
+          : {}),
         ...(input.lastName !== undefined ? { lastName: input.lastName } : {}),
         ...(input.company !== undefined ? { company: input.company } : {}),
         ...(input.jobTitle !== undefined ? { jobTitle: input.jobTitle } : {}),
@@ -88,10 +90,7 @@ export const createVoiceCRMBridge = (
         ...(input.metadata !== undefined
           ? {
               metadata: Object.fromEntries(
-                Object.entries(input.metadata).map(([k, v]) => [
-                  k,
-                  String(v),
-                ]),
+                Object.entries(input.metadata).map(([k, v]) => [k, String(v)]),
               ),
             }
           : {}),

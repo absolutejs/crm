@@ -71,7 +71,12 @@ export type CRMChangeEvent = {
 
 export type EnqueueCRMSyncJobInput = Omit<
   CRMSyncJob,
-  "id" | "status" | "attempts" | "enqueuedAtMs" | "startedAtMs" | "completedAtMs"
+  | "id"
+  | "status"
+  | "attempts"
+  | "enqueuedAtMs"
+  | "startedAtMs"
+  | "completedAtMs"
 > & {
   status?: CRMSyncJobStatus;
   attempts?: number;

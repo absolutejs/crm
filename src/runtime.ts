@@ -190,7 +190,11 @@ export const createCRMRuntime = (options: CRMRuntimeOptions) => {
 
   const mirrorLocalEntity = async (mirror: CRMOutboundLocalMirror) => {
     if (mirror.op === "remove") {
-      await removeLocalEntity(mirror.vendor, mirror.entityType, mirror.entityId);
+      await removeLocalEntity(
+        mirror.vendor,
+        mirror.entityType,
+        mirror.entityId,
+      );
       return;
     }
     await writeLocalEntityFromOutbound(
@@ -241,7 +245,12 @@ export const createCRMRuntime = (options: CRMRuntimeOptions) => {
     ): Promise<CRMContact> {
       const adapter = await adapterFor(userId, vendor);
       const contact = await adapter.createContact(input);
-      await writeLocalEntityFromOutbound(vendor, "contact", contact.id, contact);
+      await writeLocalEntityFromOutbound(
+        vendor,
+        "contact",
+        contact.id,
+        contact,
+      );
       return contact;
     },
     async createDeal(
@@ -386,7 +395,12 @@ export const createCRMRuntime = (options: CRMRuntimeOptions) => {
       const updated = await (
         await adapterFor(userId, vendor)
       ).updateContact(id, patch);
-      await writeLocalEntityFromOutbound(vendor, "contact", updated.id, updated);
+      await writeLocalEntityFromOutbound(
+        vendor,
+        "contact",
+        updated.id,
+        updated,
+      );
       return updated;
     },
     async deleteContact(
@@ -504,10 +518,15 @@ export const createCRMRuntime = (options: CRMRuntimeOptions) => {
       vendor: CRMVendor,
       input: Omit<CRMAccount, "id" | "vendor">,
     ): Promise<CRMAccount> {
-      const created = await (await adapterFor(userId, vendor)).createAccount(
-        input,
+      const created = await (
+        await adapterFor(userId, vendor)
+      ).createAccount(input);
+      await writeLocalEntityFromOutbound(
+        vendor,
+        "account",
+        created.id,
+        created,
       );
-      await writeLocalEntityFromOutbound(vendor, "account", created.id, created);
       return created;
     },
     async updateAccount(
@@ -519,7 +538,12 @@ export const createCRMRuntime = (options: CRMRuntimeOptions) => {
       const updated = await (
         await adapterFor(userId, vendor)
       ).updateAccount(id, patch);
-      await writeLocalEntityFromOutbound(vendor, "account", updated.id, updated);
+      await writeLocalEntityFromOutbound(
+        vendor,
+        "account",
+        updated.id,
+        updated,
+      );
       return updated;
     },
     async deleteAccount(
@@ -544,9 +568,9 @@ export const createCRMRuntime = (options: CRMRuntimeOptions) => {
       vendor: CRMVendor,
       input: Omit<CRMActivity, "id" | "vendor">,
     ): Promise<CRMActivity> {
-      const created = await (await adapterFor(userId, vendor)).logActivity(
-        input,
-      );
+      const created = await (
+        await adapterFor(userId, vendor)
+      ).logActivity(input);
       await writeLocalEntityFromOutbound(
         vendor,
         "activity",
@@ -624,7 +648,9 @@ export const createCRMRuntime = (options: CRMRuntimeOptions) => {
       vendor: CRMVendor,
       input: Omit<CRMTask, "id" | "vendor">,
     ): Promise<CRMTask> {
-      const created = await (await adapterFor(userId, vendor)).createTask(input);
+      const created = await (
+        await adapterFor(userId, vendor)
+      ).createTask(input);
       await writeLocalEntityFromOutbound(vendor, "task", created.id, created);
       return created;
     },

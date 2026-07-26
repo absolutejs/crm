@@ -53,9 +53,7 @@ describe("createCRMOAuthHandler", () => {
       userId: "u_1",
       vendor: "salesforce",
     });
-    expect(record.context?.instanceUrl).toBe(
-      "https://acme.my.salesforce.com",
-    );
+    expect(record.context?.instanceUrl).toBe("https://acme.my.salesforce.com");
   });
 
   test("salesforce extractor falls back to profile.urls.rest", async () => {
@@ -73,9 +71,7 @@ describe("createCRMOAuthHandler", () => {
       userId: "u_1",
       vendor: "salesforce",
     });
-    expect(record.context?.instanceUrl).toBe(
-      "https://acme.my.salesforce.com",
-    );
+    expect(record.context?.instanceUrl).toBe("https://acme.my.salesforce.com");
   });
 
   test("pipedrive extractor pulls api_domain", async () => {

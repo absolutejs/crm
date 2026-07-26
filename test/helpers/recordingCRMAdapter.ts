@@ -42,8 +42,18 @@ export const createRecordingCRMAdapter = (
     calls.push({ args, method });
   };
 
-  const contact = (id: string): CRMContact => ({ emails: [], id, phones: [], vendor });
-  const lead = (id: string): CRMLead => ({ emails: [], id, phones: [], vendor });
+  const contact = (id: string): CRMContact => ({
+    emails: [],
+    id,
+    phones: [],
+    vendor,
+  });
+  const lead = (id: string): CRMLead => ({
+    emails: [],
+    id,
+    phones: [],
+    vendor,
+  });
   const deal = (id: string): CRMDeal => ({ id, title: "Deal", vendor });
   const account = (id: string): CRMAccount => ({ id, name: "Acct", vendor });
   const activity = (id: string): CRMActivity => ({

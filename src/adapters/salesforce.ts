@@ -124,9 +124,7 @@ const clampLimit = (limit: number | undefined): number => {
 const toDateOnly = (epochMs: number): string =>
   new Date(epochMs).toISOString().slice(0, 10);
 
-const classifyLeadStatus = (
-  raw: unknown,
-): CRMLead["status"] | undefined => {
+const classifyLeadStatus = (raw: unknown): CRMLead["status"] | undefined => {
   if (raw === undefined || raw === null) return undefined;
   const value = String(raw).toLowerCase();
   if (value.includes("convert")) return "converted";
@@ -205,9 +203,7 @@ const parentIdToTargets = (
   return {};
 };
 
-const mapContactRow = (
-  row: Record<string, unknown>,
-): CRMContact => {
+const mapContactRow = (row: Record<string, unknown>): CRMContact => {
   const id = String(row.Id ?? "");
   return {
     emails: emailToCRM(row.Email as string | undefined),
@@ -493,9 +489,13 @@ export const createSalesforceCRMAdapter = async (
         body: input.body,
         id,
         vendor: VENDOR,
-        ...(input.contactIds !== undefined ? { contactIds: input.contactIds } : {}),
+        ...(input.contactIds !== undefined
+          ? { contactIds: input.contactIds }
+          : {}),
         ...(input.dealId !== undefined ? { dealId: input.dealId } : {}),
-        ...(input.accountId !== undefined ? { accountId: input.accountId } : {}),
+        ...(input.accountId !== undefined
+          ? { accountId: input.accountId }
+          : {}),
         ...(input.ownerId !== undefined ? { ownerId: input.ownerId } : {}),
       } satisfies CRMNote;
     },
@@ -592,7 +592,9 @@ export const createSalesforceCRMAdapter = async (
         Company: input.company ?? "Unknown",
         FirstName: input.firstName,
         LastName: input.lastName ?? input.firstName ?? "Unknown",
-        ...(input.emails[0]?.address ? { Email: input.emails[0]?.address } : {}),
+        ...(input.emails[0]?.address
+          ? { Email: input.emails[0]?.address }
+          : {}),
         ...(input.phones[0]?.number ? { Phone: input.phones[0]?.number } : {}),
         ...(input.jobTitle ? { Title: input.jobTitle } : {}),
         ...(input.source ? { LeadSource: input.source } : {}),
@@ -614,8 +616,7 @@ export const createSalesforceCRMAdapter = async (
         ...(input.ownerId ? { OwnerId: input.ownerId } : {}),
         ...(input.dueAt ? { ActivityDate: toDateOnly(input.dueAt) } : {}),
         Priority: taskPriorityToSF(input.priority),
-        Status:
-          input.status === "completed" ? "Completed" : "Not Started",
+        Status: input.status === "completed" ? "Completed" : "Not Started",
       });
       const id = ensureSaved(result);
       return { ...input, id, vendor: VENDOR } satisfies CRMTask;
@@ -806,9 +807,7 @@ export const createSalesforceCRMAdapter = async (
         fields.Phone = patch.phones[0].number;
       const result = await connection.sobject("Contact").update(fields);
       ensureSaved(result);
-      const fetched = await connection
-        .sobject("Contact")
-        .retrieve(id);
+      const fetched = await connection.sobject("Contact").retrieve(id);
       return mapContactRow(fetched);
     },
     async updateDeal(id, patch) {
@@ -822,9 +821,7 @@ export const createSalesforceCRMAdapter = async (
       if (patch.ownerId !== undefined) fields.OwnerId = patch.ownerId;
       const result = await connection.sobject("Opportunity").update(fields);
       ensureSaved(result);
-      const fetched = await connection
-        .sobject("Opportunity")
-        .retrieve(id);
+      const fetched = await connection.sobject("Opportunity").retrieve(id);
       return mapDealRow(fetched);
     },
     async updateLead(id, patch) {
@@ -867,7 +864,8 @@ export const createSalesforceCRMAdapter = async (
         fields.Description = patch.description;
       if (patch.dueAt !== undefined)
         fields.ActivityDate = toDateOnly(patch.dueAt);
-      if (patch.status !== undefined) fields.Status = taskStatusToSF(patch.status);
+      if (patch.status !== undefined)
+        fields.Status = taskStatusToSF(patch.status);
       if (patch.priority !== undefined)
         fields.Priority = taskPriorityToSF(patch.priority);
       if (patch.ownerId !== undefined) fields.OwnerId = patch.ownerId;

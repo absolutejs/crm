@@ -6,8 +6,9 @@ import {
 import type { CRMHttpClient } from "../src/adapters/_http";
 
 const mockHttp = () => {
-  const calls: { body: { query: string; variables: Record<string, unknown> } }[] =
-    [];
+  const calls: {
+    body: { query: string; variables: Record<string, unknown> };
+  }[] = [];
   const responses: { match: string; data: unknown }[] = [];
   const http: CRMHttpClient = async (req) => {
     const body = req.body as {
@@ -87,9 +88,9 @@ describe("createMondayCRMAdapter", () => {
   test("createDeal requires dealsBoardId", async () => {
     const mock = mockHttp();
     const adapter = await createMondayCRMAdapter(baseOptions(mock.http));
-    await expect(
-      adapter.createDeal({ title: "Acme deal" }),
-    ).rejects.toThrow(/dealsBoardId/);
+    await expect(adapter.createDeal({ title: "Acme deal" })).rejects.toThrow(
+      /dealsBoardId/,
+    );
   });
 
   test("logActivity creates an update note on the contact item", async () => {

@@ -266,7 +266,9 @@ export const createMondayCRMAdapter = async (
         ...(noteInput.accountId !== undefined
           ? { accountId: noteInput.accountId }
           : {}),
-        ...(noteInput.ownerId !== undefined ? { ownerId: noteInput.ownerId } : {}),
+        ...(noteInput.ownerId !== undefined
+          ? { ownerId: noteInput.ownerId }
+          : {}),
       };
     },
     capabilities: MONDAY_CAPABILITIES,
@@ -325,8 +327,7 @@ export const createMondayCRMAdapter = async (
       const joined = [leadInput.firstName, leadInput.lastName]
         .filter(Boolean)
         .join(" ");
-      const leadName =
-        joined || leadInput.emails[0]?.address || "Unknown lead";
+      const leadName = joined || leadInput.emails[0]?.address || "Unknown lead";
       const leadColumnValues = buildColumnValuesJson({
         email: leadInput.emails[0]?.address,
         firstName: leadInput.firstName,
@@ -351,7 +352,9 @@ export const createMondayCRMAdapter = async (
     async createTask(taskInput) {
       const itemId = taskInput.contactIds?.[0];
       if (!itemId) {
-        throw new Error("monday task requires contactIds[0] to create an update");
+        throw new Error(
+          "monday task requires contactIds[0] to create an update",
+        );
       }
       const query = `mutation($itemId: ID!, $body: String!) {
         create_update(item_id: $itemId, body: $body) { id }
@@ -529,7 +532,9 @@ export const createMondayCRMAdapter = async (
     async logActivity(activityInput) {
       const itemId = activityInput.contactIds?.[0] ?? activityInput.dealId;
       if (!itemId) {
-        throw new Error("monday call activity requires contactIds[0] or dealId");
+        throw new Error(
+          "monday call activity requires contactIds[0] or dealId",
+        );
       }
       const body = `📞 ${activityInput.subject ?? "Voice call"}\n${activityInput.body ?? ""}${activityInput.durationSeconds ? `\nDuration: ${activityInput.durationSeconds}s` : ""}`;
       const query = `mutation($itemId: ID!, $body: String!) {
@@ -565,9 +570,11 @@ export const createMondayCRMAdapter = async (
       const items = result.boards[0]?.items_page.items ?? [];
       const needle = query.toLowerCase();
       return items
-        .filter((item) =>
-          item.name.toLowerCase().includes(needle) ||
-          (valueFor(item, mapping.email)?.toLowerCase().includes(needle) ?? false),
+        .filter(
+          (item) =>
+            item.name.toLowerCase().includes(needle) ||
+            (valueFor(item, mapping.email)?.toLowerCase().includes(needle) ??
+              false),
         )
         .map((item) => mapItemToContact(item, mapping));
     },
@@ -667,7 +674,9 @@ export const createMondayCRMAdapter = async (
         id,
         phones: patch.phones ?? [],
         vendor: VENDOR,
-        ...(patch.firstName !== undefined ? { firstName: patch.firstName } : {}),
+        ...(patch.firstName !== undefined
+          ? { firstName: patch.firstName }
+          : {}),
         ...(patch.lastName !== undefined ? { lastName: patch.lastName } : {}),
         ...(patch.company !== undefined ? { company: patch.company } : {}),
         ...(patch.jobTitle !== undefined ? { jobTitle: patch.jobTitle } : {}),
@@ -682,8 +691,12 @@ export const createMondayCRMAdapter = async (
           ? { customFields: patch.customFields }
           : {}),
         ...(patch.notes !== undefined ? { notes: patch.notes } : {}),
-        ...(patch.createdAt !== undefined ? { createdAt: patch.createdAt } : {}),
-        ...(patch.updatedAt !== undefined ? { updatedAt: patch.updatedAt } : {}),
+        ...(patch.createdAt !== undefined
+          ? { createdAt: patch.createdAt }
+          : {}),
+        ...(patch.updatedAt !== undefined
+          ? { updatedAt: patch.updatedAt }
+          : {}),
       };
     },
     async updateNote() {

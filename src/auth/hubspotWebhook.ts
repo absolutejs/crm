@@ -45,8 +45,7 @@ export const verifyHubSpotWebhookV3Signature: CRMWebhookSignatureVerifier = ({
 }) => {
   if (!secret) return false;
   const signature =
-    headers["x-hubspot-signature-v3"] ??
-    headers["X-HubSpot-Signature-v3"];
+    headers["x-hubspot-signature-v3"] ?? headers["X-HubSpot-Signature-v3"];
   const timestamp =
     headers["x-hubspot-request-timestamp"] ??
     headers["X-HubSpot-Request-Timestamp"];
@@ -73,15 +72,16 @@ export const normalizeHubSpotWebhookPayload: CRMWebhookNormalizer = ({
   for (const entry of entries) {
     const entityType = subscriptionToEntityType(entry.subscriptionType);
     if (!entityType) continue;
-    const entityId =
-      entry.objectId !== undefined ? String(entry.objectId) : "";
+    const entityId = entry.objectId !== undefined ? String(entry.objectId) : "";
     if (!entityId) continue;
     const op = subscriptionToOp(entry.subscriptionType);
     const payload: Record<string, unknown> = {
       ...(entry.propertyName !== undefined
         ? { [entry.propertyName]: entry.propertyValue }
         : {}),
-      ...(entry.changeFlag !== undefined ? { changeFlag: entry.changeFlag } : {}),
+      ...(entry.changeFlag !== undefined
+        ? { changeFlag: entry.changeFlag }
+        : {}),
     };
     events.push({
       ...(entry.portalId !== undefined
@@ -89,7 +89,10 @@ export const normalizeHubSpotWebhookPayload: CRMWebhookNormalizer = ({
         : {}),
       entityId,
       entityType,
-      id: entry.eventId !== undefined ? `hs:${entry.eventId}` : `hs:${entityId}:${entry.occurredAt ?? receivedAtMs}`,
+      id:
+        entry.eventId !== undefined
+          ? `hs:${entry.eventId}`
+          : `hs:${entityId}:${entry.occurredAt ?? receivedAtMs}`,
       op,
       payload,
       receivedAtMs: entry.occurredAt ?? receivedAtMs,

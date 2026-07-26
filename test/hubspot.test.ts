@@ -32,9 +32,7 @@ const makeMockClient = () => {
     async getById(id: string, properties?: string[]) {
       calls.push({ args: [id, properties], method: "getById", surface });
       const seeded2 = seeded[`${surface}.getById.${id}`];
-      return (
-        (seeded2 as HubSpotObjectResponse) ?? { id, properties: {} }
-      );
+      return (seeded2 as HubSpotObjectResponse) ?? { id, properties: {} };
     },
     async update(id: string, input: unknown) {
       calls.push({ args: [id, input], method: "update", surface });
@@ -42,7 +40,8 @@ const makeMockClient = () => {
       return (
         (seeded2 as HubSpotObjectResponse) ?? {
           id,
-          properties: (input as { properties: Record<string, string> }).properties,
+          properties: (input as { properties: Record<string, string> })
+            .properties,
         }
       );
     },
@@ -112,7 +111,11 @@ const makeMockClient = () => {
   return {
     calls,
     client,
-    seed(key: string, value: HubSpotObjectResponse | HubSpotObjectResponse[] | { error?: string }) {
+    seed(
+      key: string,
+      value:
+        HubSpotObjectResponse | HubSpotObjectResponse[] | { error?: string },
+    ) {
       seeded[key] = value;
     },
   };
@@ -263,7 +266,10 @@ describe("createHubSpotCRMAdapter", () => {
       (c) => c.method === "create" && c.surface === "notes",
     );
     const input = createCall?.args[0] as {
-      associations?: { to: { id: string }; types: { associationTypeId: number }[] }[];
+      associations?: {
+        to: { id: string };
+        types: { associationTypeId: number }[];
+      }[];
     };
     expect(input.associations?.[0]?.to.id).toBe("c_42");
     expect(input.associations?.[0]?.types[0]?.associationTypeId).toBe(202);

@@ -86,13 +86,17 @@ describe("createCRMRuntime widened surface", () => {
     await seed(runtime);
     const acct = await runtime.createAccount("u", "hubspot", { name: "Acme" });
     expect(acct.id).toBe("acct_1");
-    expect(await localEntityStore.get("hubspot", "account", "acct_1")).not.toBeNull();
+    expect(
+      await localEntityStore.get("hubspot", "account", "acct_1"),
+    ).not.toBeNull();
     const act = await runtime.logActivity("u", "hubspot", {
       occurredAt: 0,
       type: "call",
     });
     expect(act.id).toBe("activity_1");
-    expect(await localEntityStore.get("hubspot", "activity", "activity_1")).not.toBeNull();
+    expect(
+      await localEntityStore.get("hubspot", "activity", "activity_1"),
+    ).not.toBeNull();
   });
 
   test("convertLead delegates when supported and throws when adapter lacks it", async () => {
@@ -116,9 +120,9 @@ describe("createCRMRuntime widened surface", () => {
       syncQueue: createInMemoryCRMSyncQueue(),
       tokenStore,
     });
-    await expect(
-      runtime.convertLead("u", "hubspot", "l_2"),
-    ).rejects.toThrow(/does not support lead conversion/);
+    await expect(runtime.convertLead("u", "hubspot", "l_2")).rejects.toThrow(
+      /does not support lead conversion/,
+    );
   });
 
   test("processOutboundJobs drains the queue end-to-end through the runtime", async () => {

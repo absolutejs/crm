@@ -91,9 +91,7 @@ export const createSqliteCRMLocalEntityStore = (
 
   return {
     async get(vendor, entityType, entityId) {
-      const row = getStmt.get(vendor, entityType, entityId) as
-        | Row
-        | undefined;
+      const row = getStmt.get(vendor, entityType, entityId) as Row | undefined;
       return row ? rowToRecord(row) : null;
     },
     async list(filter) {
@@ -106,8 +104,7 @@ export const createSqliteCRMLocalEntityStore = (
         )
         .filter(
           (r) =>
-            filter?.sinceMs === undefined ||
-            r.localUpdatedAt >= filter.sinceMs,
+            filter?.sinceMs === undefined || r.localUpdatedAt >= filter.sinceMs,
         );
     },
     async put(record) {

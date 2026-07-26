@@ -129,7 +129,13 @@ describe("createPipedriveCRMAdapter", () => {
       { id: 1, name: "Sales", selected: true },
     ]);
     mock.seed("GET https://acme.pipedrive.com/api/v1/stages", [
-      { deal_probability: 50, id: 10, name: "Qualified", order_nr: 1, pipeline_id: 1 },
+      {
+        deal_probability: 50,
+        id: 10,
+        name: "Qualified",
+        order_nr: 1,
+        pipeline_id: 1,
+      },
       { id: 20, name: "Won", order_nr: 2, pipeline_id: 1 },
     ]);
     const adapter = await createPipedriveCRMAdapter({

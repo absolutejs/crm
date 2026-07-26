@@ -16,16 +16,16 @@ A unified CRM contract (`CRMAdapter`) plus vendor adapters for the major CRMs, d
 
 ## Vendor coverage roadmap
 
-| Vendor | Status | Auth | Adapter | Webhooks |
-|---|---|---|---|---|
-| Salesforce | planned | citra (shipped) | TBD | TBD |
-| HubSpot | planned | citra (shipped 0.26.0) | TBD | TBD |
-| Pipedrive | planned | citra (pending) | TBD | TBD |
-| Zoho CRM | planned | citra (pending) | TBD | TBD |
-| Attio | planned | citra (pending) | TBD | TBD |
-| Close | planned | citra (pending) | TBD | TBD |
-| monday CRM | planned | citra (pending) | TBD | TBD |
-| GoHighLevel | planned | citra (pending) | TBD | TBD |
+| Vendor      | Status  | Auth                   | Adapter | Webhooks |
+| ----------- | ------- | ---------------------- | ------- | -------- |
+| Salesforce  | planned | citra (shipped)        | TBD     | TBD      |
+| HubSpot     | planned | citra (shipped 0.26.0) | TBD     | TBD      |
+| Pipedrive   | planned | citra (pending)        | TBD     | TBD      |
+| Zoho CRM    | planned | citra (pending)        | TBD     | TBD      |
+| Attio       | planned | citra (pending)        | TBD     | TBD      |
+| Close       | planned | citra (pending)        | TBD     | TBD      |
+| monday CRM  | planned | citra (pending)        | TBD     | TBD      |
+| GoHighLevel | planned | citra (pending)        | TBD     | TBD      |
 
 ## Design
 

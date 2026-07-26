@@ -82,7 +82,12 @@ export const createCRMOAuthHandler = (
 
   return {
     enabledVendors,
-    async fromAbsoluteAuthCallback({ userId, authProvider, tokenResponse, profile }) {
+    async fromAbsoluteAuthCallback({
+      userId,
+      authProvider,
+      tokenResponse,
+      profile,
+    }) {
       if (!enabledSet.has(authProvider as CRMVendor)) return null;
       return persist({
         profile,

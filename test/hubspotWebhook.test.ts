@@ -14,7 +14,9 @@ const signedHeaders = (rawBody: string) => {
   const method = "POST";
   const uri = "/webhooks/hubspot";
   const source = `${method}${uri}${rawBody}${timestamp}`;
-  const signature = createHmac("sha256", SECRET).update(source).digest("base64");
+  const signature = createHmac("sha256", SECRET)
+    .update(source)
+    .digest("base64");
   return {
     "x-hubspot-request-method": method,
     "x-hubspot-request-timestamp": timestamp,
@@ -120,9 +122,7 @@ describe("normalizeHubSpotWebhookPayload", () => {
   test("deal.deletion maps to op=delete + entityType=deal", async () => {
     const events = await normalizeHubSpotWebhookPayload({
       headers: {},
-      parsed: [
-        { eventId: 1, objectId: 99, subscriptionType: "deal.deletion" },
-      ],
+      parsed: [{ eventId: 1, objectId: 99, subscriptionType: "deal.deletion" }],
       rawBody: "[]",
       receivedAtMs: 0,
     });

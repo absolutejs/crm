@@ -49,20 +49,17 @@ describe("createAttioCRMAdapter", () => {
 
   test("lookupContactByEmail uses POST query with filter", async () => {
     const mock = mockHttp();
-    mock.seed(
-      "POST https://api.attio.com/v2/objects/people/records/query",
-      {
-        data: [
-          {
-            id: { record_id: "p_5" },
-            values: {
-              email_addresses: [{ value: "alex@example.com" }],
-              name: [{ value: { first_name: "Alex", last_name: "Kahn" } }],
-            },
+    mock.seed("POST https://api.attio.com/v2/objects/people/records/query", {
+      data: [
+        {
+          id: { record_id: "p_5" },
+          values: {
+            email_addresses: [{ value: "alex@example.com" }],
+            name: [{ value: { first_name: "Alex", last_name: "Kahn" } }],
           },
-        ],
-      },
-    );
+        },
+      ],
+    });
     const adapter = await createAttioCRMAdapter({
       accessToken: "tkn",
       httpClient: mock.http,
@@ -88,7 +85,9 @@ describe("createAttioCRMAdapter", () => {
       title: "Acme deal",
     });
     const body = mock.calls[0]?.body as {
-      data: { values: { value: { currency_value: number; currency_code: string } } };
+      data: {
+        values: { value: { currency_value: number; currency_code: string } };
+      };
     };
     expect(body.data.values.value.currency_value).toBe(5_000);
     expect(body.data.values.value.currency_code).toBe("USD");

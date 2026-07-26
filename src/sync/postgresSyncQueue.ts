@@ -219,7 +219,8 @@ export const createPostgresCRMSyncQueue = async (
         params.push(filter.userId);
         conditions.push(`user_id = $${params.length}`);
       }
-      const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+      const where =
+        conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
       const rows = await query<JobRow>(
         `SELECT * FROM ${jobs} ${where}`,
         params,

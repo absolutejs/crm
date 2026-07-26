@@ -27,14 +27,19 @@ const makeMockConnection = () => {
           calls.push({ args: [record], method: "create", type: name });
           const seeded = sobjectResults.get(name)?.[0];
           if (seeded?.error) {
-            return { errors: [{ message: String(seeded.error) }], success: false };
+            return {
+              errors: [{ message: String(seeded.error) }],
+              success: false,
+            };
           }
           const id = (seeded?.Id as string) ?? `${name}_id`;
           return { id, success: true };
         },
         async retrieve(id) {
           calls.push({ args: [id], method: "retrieve", type: name });
-          return sobjectResults.get(name)?.find((r) => r.Id === id) ?? { Id: id };
+          return (
+            sobjectResults.get(name)?.find((r) => r.Id === id) ?? { Id: id }
+          );
         },
         async update(record) {
           calls.push({ args: [record], method: "update", type: name });
@@ -70,7 +75,12 @@ describe("createSalesforceCRMAdapter", () => {
   test("lookupContactByEmail issues SOQL and maps the row", async () => {
     const mock = makeMockConnection();
     mock.seedQuery("Email = 'alex@example.com'", [
-      { Email: "alex@example.com", FirstName: "Alex", Id: "003abc", LastName: "K" },
+      {
+        Email: "alex@example.com",
+        FirstName: "Alex",
+        Id: "003abc",
+        LastName: "K",
+      },
     ]);
     const adapter = await createSalesforceCRMAdapter({
       accessToken: "x",
@@ -188,7 +198,12 @@ describe("createSalesforceCRMAdapter", () => {
   test("updateContact retrieves the updated record after update", async () => {
     const mock = makeMockConnection();
     mock.seedSObject("Contact", [
-      { Email: "new@example.com", FirstName: "Alex", Id: "003xyz", LastName: "K" },
+      {
+        Email: "new@example.com",
+        FirstName: "Alex",
+        Id: "003xyz",
+        LastName: "K",
+      },
     ]);
     const adapter = await createSalesforceCRMAdapter({
       accessToken: "x",

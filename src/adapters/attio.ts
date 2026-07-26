@@ -48,7 +48,11 @@ type AttioValue<T = unknown> = { value: T }[];
 type AttioPersonRecord = {
   id: { record_id: string };
   values: {
-    name?: AttioValue<{ first_name?: string; last_name?: string; full_name?: string }>;
+    name?: AttioValue<{
+      first_name?: string;
+      last_name?: string;
+      full_name?: string;
+    }>;
     email_addresses?: AttioValue<string>;
     phone_numbers?: AttioValue<string>;
     job_title?: AttioValue<string>;
@@ -319,7 +323,9 @@ export const createAttioCRMAdapter = async (
         ...(noteInput.accountId !== undefined
           ? { accountId: noteInput.accountId }
           : {}),
-        ...(noteInput.ownerId !== undefined ? { ownerId: noteInput.ownerId } : {}),
+        ...(noteInput.ownerId !== undefined
+          ? { ownerId: noteInput.ownerId }
+          : {}),
       };
     },
     capabilities: ATTIO_CAPABILITIES,
@@ -331,7 +337,11 @@ export const createAttioCRMAdapter = async (
         "/objects/companies/records",
         { data: { values } },
       );
-      return { ...accountInput, id: response.data.id.record_id, vendor: VENDOR };
+      return {
+        ...accountInput,
+        id: response.data.id.record_id,
+        vendor: VENDOR,
+      };
     },
     async createContact(contactInput) {
       const values: Record<string, unknown> = {

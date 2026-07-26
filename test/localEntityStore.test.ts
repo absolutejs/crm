@@ -1,17 +1,22 @@
 import { describe, expect, test } from "bun:test";
 import { createInMemoryCRMLocalEntityStore } from "../src/stores";
 
-const sample = (overrides: Partial<Parameters<typeof createInMemoryCRMLocalEntityStore>[0]> = {}) =>
-  createInMemoryCRMLocalEntityStore(overrides as never);
+const sample = (
+  overrides: Partial<
+    Parameters<typeof createInMemoryCRMLocalEntityStore>[0]
+  > = {},
+) => createInMemoryCRMLocalEntityStore(overrides as never);
 
-const record = (overrides: Partial<{
-  vendor: "hubspot" | "salesforce";
-  entityType: "contact" | "deal";
-  entityId: string;
-  data: Record<string, unknown>;
-  origin: "app" | "vendor" | "reconciled";
-  localUpdatedAt: number;
-}> = {}) => ({
+const record = (
+  overrides: Partial<{
+    vendor: "hubspot" | "salesforce";
+    entityType: "contact" | "deal";
+    entityId: string;
+    data: Record<string, unknown>;
+    origin: "app" | "vendor" | "reconciled";
+    localUpdatedAt: number;
+  }> = {},
+) => ({
   data: { firstName: "Alex" },
   entityId: "c_1",
   entityType: "contact" as const,
@@ -62,9 +67,7 @@ describe("createInMemoryCRMLocalEntityStore", () => {
   test("list filters by sinceMs", async () => {
     const store = sample();
     await store.put(record({ localUpdatedAt: 500 }));
-    await store.put(
-      record({ entityId: "c_2", localUpdatedAt: 1500 }),
-    );
+    await store.put(record({ entityId: "c_2", localUpdatedAt: 1500 }));
     const recent = await store.list({ sinceMs: 1000 });
     expect(recent).toHaveLength(1);
     expect(recent[0]?.entityId).toBe("c_2");

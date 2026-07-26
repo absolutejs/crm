@@ -102,7 +102,7 @@ type ZohoNote = {
   Note_Content?: string;
   Note_Title?: string;
   Parent_Id?: { id: string };
-  "$se_module"?: string;
+  $se_module?: string;
   se_module?: string;
   Owner?: { id: string };
 };
@@ -140,9 +140,7 @@ const mapContact = (record: ZohoContact): CRMContact => ({
   emails: record.Email ? [{ address: record.Email, primary: true }] : [],
   id: record.id,
   phones: [
-    ...(record.Phone
-      ? [{ label: "work" as const, number: record.Phone }]
-      : []),
+    ...(record.Phone ? [{ label: "work" as const, number: record.Phone }] : []),
     ...(record.Mobile
       ? [{ label: "mobile" as const, number: record.Mobile }]
       : []),
@@ -390,7 +388,9 @@ export const createZohoCRMAdapter = async (
         ...(noteInput.accountId !== undefined
           ? { accountId: noteInput.accountId }
           : {}),
-        ...(noteInput.ownerId !== undefined ? { ownerId: noteInput.ownerId } : {}),
+        ...(noteInput.ownerId !== undefined
+          ? { ownerId: noteInput.ownerId }
+          : {}),
       };
     },
     capabilities: ZOHO_CAPABILITIES,
@@ -434,9 +434,7 @@ export const createZohoCRMAdapter = async (
         `/Deals/${result.Deals}`,
       );
       const dealRow = dealResult.data[0];
-      return dealRow
-        ? { contact, deal: mapDeal(dealRow) }
-        : { contact };
+      return dealRow ? { contact, deal: mapDeal(dealRow) } : { contact };
     },
     async createAccount(accountInput) {
       const created = await writeRecord<{ id: string }>("Accounts", {
@@ -526,10 +524,7 @@ export const createZohoCRMAdapter = async (
       return record ? mapAccount(record) : null;
     },
     async getActivity(id) {
-      const result = await request<{ data: ZohoCall[] }>(
-        "GET",
-        `/Calls/${id}`,
-      );
+      const result = await request<{ data: ZohoCall[] }>("GET", `/Calls/${id}`);
       const record = result.data[0];
       return record ? mapActivity(record) : null;
     },
@@ -542,26 +537,17 @@ export const createZohoCRMAdapter = async (
       return record ? mapContact(record) : null;
     },
     async getDeal(id) {
-      const result = await request<{ data: ZohoDeal[] }>(
-        "GET",
-        `/Deals/${id}`,
-      );
+      const result = await request<{ data: ZohoDeal[] }>("GET", `/Deals/${id}`);
       const record = result.data[0];
       return record ? mapDeal(record) : null;
     },
     async getLead(id) {
-      const result = await request<{ data: ZohoLead[] }>(
-        "GET",
-        `/Leads/${id}`,
-      );
+      const result = await request<{ data: ZohoLead[] }>("GET", `/Leads/${id}`);
       const record = result.data[0];
       return record ? mapLead(record) : null;
     },
     async getNote(id) {
-      const result = await request<{ data: ZohoNote[] }>(
-        "GET",
-        `/Notes/${id}`,
-      );
+      const result = await request<{ data: ZohoNote[] }>("GET", `/Notes/${id}`);
       const record = result.data[0];
       return record ? mapNote(record) : null;
     },
@@ -571,10 +557,7 @@ export const createZohoCRMAdapter = async (
       return null;
     },
     async getTask(id) {
-      const result = await request<{ data: ZohoTask[] }>(
-        "GET",
-        `/Tasks/${id}`,
-      );
+      const result = await request<{ data: ZohoTask[] }>("GET", `/Tasks/${id}`);
       const record = result.data[0];
       return record ? mapTask(record) : null;
     },
@@ -706,7 +689,8 @@ export const createZohoCRMAdapter = async (
         `/Calls/${id}`,
       );
       const record = refreshed.data[0];
-      if (!record) throw new Error(`Zoho activity ${id} not found after update`);
+      if (!record)
+        throw new Error(`Zoho activity ${id} not found after update`);
       return mapActivity(record);
     },
     async updateLead(id, patch) {
@@ -785,7 +769,4 @@ export const createZohoCRMAdapter = async (
   };
 };
 
-export {
-  mapContact as mapZohoContact,
-  mapDeal as mapZohoDeal,
-};
+export { mapContact as mapZohoContact, mapDeal as mapZohoDeal };

@@ -10,9 +10,7 @@ describe("createVoiceLeadCapturePathway", () => {
     const pathway = createVoiceLeadCapturePathway();
     const report = validateVoicePathway(pathway);
     expect(report.valid).toBe(true);
-    expect(
-      report.issues.filter((i) => i.severity === "error"),
-    ).toHaveLength(0);
+    expect(report.issues.filter((i) => i.severity === "error")).toHaveLength(0);
   });
 
   test("default slots include required fields", () => {
@@ -31,9 +29,7 @@ describe("createVoiceLeadCapturePathway", () => {
     expect(pathway.slots.find((s) => s.id === "firstName")?.required).toBe(
       true,
     );
-    expect(pathway.slots.find((s) => s.id === "company")?.required).toBe(
-      false,
-    );
+    expect(pathway.slots.find((s) => s.id === "company")?.required).toBe(false);
   });
 
   test("submit state emits call-tool with all field slot ids", () => {
@@ -51,7 +47,9 @@ describe("createVoiceLeadCapturePathway", () => {
   });
 
   test("custom toolId is used in both tool registry and call-tool action", () => {
-    const pathway = createVoiceLeadCapturePathway({ toolId: "crm.hubspot_lead" });
+    const pathway = createVoiceLeadCapturePathway({
+      toolId: "crm.hubspot_lead",
+    });
     const submit = pathway.states.find((s) => s.id === "submit");
     const callTool = submit?.actions?.find((a) => a.kind === "call-tool");
     if (callTool?.kind === "call-tool") {

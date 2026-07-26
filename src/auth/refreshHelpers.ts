@@ -10,9 +10,7 @@ import type {
 import type { CRMVendor } from "../types";
 
 export type CRMCitraOAuth2ClientLike = {
-  refreshAccessToken(
-    refreshToken: string,
-  ): Promise<CRMOAuthTokenResponseLike>;
+  refreshAccessToken(refreshToken: string): Promise<CRMOAuthTokenResponseLike>;
 };
 
 const refreshedTokenFromResponse = (
@@ -46,9 +44,9 @@ export type CreateSingleVendorRefreshOAuthOptions = {
 
 const buildVendorRefresh =
   (
-  vendor: CRMVendor,
-  options: CreateSingleVendorRefreshOAuthOptions,
-): CRMRefreshOAuth =>
+    vendor: CRMVendor,
+    options: CreateSingleVendorRefreshOAuthOptions,
+  ): CRMRefreshOAuth =>
   async ({ refreshToken }) => {
     const response = await options.client.refreshAccessToken(refreshToken);
     const extractor =
@@ -94,9 +92,7 @@ export const createGoHighLevelCRMRefreshOAuth = (
 ): CRMRefreshOAuth => buildVendorRefresh("gohighlevel", options);
 
 export type CRMMultiVendorRefreshOptions = {
-  vendors: Partial<
-    Record<CRMVendor, CreateSingleVendorRefreshOAuthOptions>
-  >;
+  vendors: Partial<Record<CRMVendor, CreateSingleVendorRefreshOAuthOptions>>;
   now?: () => number;
 };
 

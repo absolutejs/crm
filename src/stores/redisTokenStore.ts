@@ -47,14 +47,8 @@ export const createRedisCRMTokenStore = (
         tokenKey(prefix, record.userId, record.vendor),
         JSON.stringify(record),
       );
-      await client.sadd(
-        userVendorsKey(prefix, record.userId),
-        record.vendor,
-      );
-      await client.sadd(
-        vendorUsersKey(prefix, record.vendor),
-        record.userId,
-      );
+      await client.sadd(userVendorsKey(prefix, record.userId), record.vendor);
+      await client.sadd(vendorUsersKey(prefix, record.vendor), record.userId);
     },
     async remove(userId, vendor) {
       const removed = await client.del(tokenKey(prefix, userId, vendor));

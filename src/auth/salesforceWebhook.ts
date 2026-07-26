@@ -1,10 +1,7 @@
 import { createHmac } from "node:crypto";
 import type { CRMChangeEvent } from "../sync";
 import type { CRMEntityType } from "../types";
-import {
-  headerValue,
-  timingSafeEqualString,
-} from "./_webhookHelpers";
+import { headerValue, timingSafeEqualString } from "./_webhookHelpers";
 import type {
   CRMWebhookNormalizer,
   CRMWebhookSignatureVerifier,
@@ -65,7 +62,9 @@ export const verifySalesforceWebhookSignature: CRMWebhookSignatureVerifier = ({
     "x-salesforce-signature",
   );
   if (!signature) return false;
-  const expected = createHmac("sha256", secret).update(rawBody).digest("base64");
+  const expected = createHmac("sha256", secret)
+    .update(rawBody)
+    .digest("base64");
   return timingSafeEqualString(signature, expected);
 };
 

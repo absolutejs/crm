@@ -1,8 +1,4 @@
-import type {
-  CRMAdapter,
-  CRMEntityType,
-  CRMVendor,
-} from "../types";
+import type { CRMAdapter, CRMEntityType, CRMVendor } from "../types";
 import type {
   CRMSyncEntityPayload,
   CRMSyncJob,
@@ -63,22 +59,22 @@ export type CreateCRMOutboundWorkerOptions = {
    * Resolves (and caches) the vendor adapter for a given installer. The runtime
    * passes its own `adapterFor` so token refresh + per-user caching are shared.
    */
-  resolveAdapter: (
-    userId: string,
-    vendor: CRMVendor,
-  ) => Promise<CRMAdapter>;
+  resolveAdapter: (userId: string, vendor: CRMVendor) => Promise<CRMAdapter>;
   now?: () => number;
   /**
    * Optional hook called after a successful outbound write so the caller can
    * mirror the change into a local entity store. No-op when omitted.
    */
-  mirrorLocalEntity?: (
-    mirror: CRMOutboundLocalMirror,
-  ) => void | Promise<void>;
+  mirrorLocalEntity?: (mirror: CRMOutboundLocalMirror) => void | Promise<void>;
 };
 
 type ExecMirror =
-  | { op: "put"; entityType: CRMEntityType; entityId: string; data: Record<string, unknown> }
+  | {
+      op: "put";
+      entityType: CRMEntityType;
+      entityId: string;
+      data: Record<string, unknown>;
+    }
   | { op: "remove"; entityType: CRMEntityType; entityId: string };
 
 type ExecResult =
@@ -114,67 +110,119 @@ export const createCRMOutboundWorker = (
   ): Promise<ExecResult> => {
     switch (payload.entityType) {
       case "contact": {
-        const { id: _id, vendor: _vendor, emails, phones, ...rest } =
-          payload.entity;
+        const {
+          id: _id,
+          vendor: _vendor,
+          emails,
+          phones,
+          ...rest
+        } = payload.entity;
         const created = await adapter.createContact({
           emails: emails ?? [],
           phones: phones ?? [],
           ...rest,
         });
         return {
-          mirror: { data: created, entityId: created.id, entityType: "contact", op: "put" },
+          mirror: {
+            data: created,
+            entityId: created.id,
+            entityType: "contact",
+            op: "put",
+          },
           resultEntityId: created.id,
           status: "completed",
         };
       }
       case "lead": {
         if (!adapter.capabilities.supportsLeads) {
-          return { reason: `${adapter.vendor} does not support leads`, status: "skipped" };
+          return {
+            reason: `${adapter.vendor} does not support leads`,
+            status: "skipped",
+          };
         }
-        const { id: _id, vendor: _vendor, emails, phones, ...rest } =
-          payload.entity;
+        const {
+          id: _id,
+          vendor: _vendor,
+          emails,
+          phones,
+          ...rest
+        } = payload.entity;
         const created = await adapter.createLead({
           emails: emails ?? [],
           phones: phones ?? [],
           ...rest,
         });
         return {
-          mirror: { data: created, entityId: created.id, entityType: "lead", op: "put" },
+          mirror: {
+            data: created,
+            entityId: created.id,
+            entityType: "lead",
+            op: "put",
+          },
           resultEntityId: created.id,
           status: "completed",
         };
       }
       case "deal": {
         const { id: _id, vendor: _vendor, title, ...rest } = payload.entity;
-        const created = await adapter.createDeal({ title: title ?? "", ...rest });
+        const created = await adapter.createDeal({
+          title: title ?? "",
+          ...rest,
+        });
         return {
-          mirror: { data: created, entityId: created.id, entityType: "deal", op: "put" },
+          mirror: {
+            data: created,
+            entityId: created.id,
+            entityType: "deal",
+            op: "put",
+          },
           resultEntityId: created.id,
           status: "completed",
         };
       }
       case "account": {
         if (!adapter.capabilities.supportsAccounts) {
-          return { reason: `${adapter.vendor} does not support accounts`, status: "skipped" };
+          return {
+            reason: `${adapter.vendor} does not support accounts`,
+            status: "skipped",
+          };
         }
         const { id: _id, vendor: _vendor, name, ...rest } = payload.entity;
-        const created = await adapter.createAccount({ name: name ?? "", ...rest });
+        const created = await adapter.createAccount({
+          name: name ?? "",
+          ...rest,
+        });
         return {
-          mirror: { data: created, entityId: created.id, entityType: "account", op: "put" },
+          mirror: {
+            data: created,
+            entityId: created.id,
+            entityType: "account",
+            op: "put",
+          },
           resultEntityId: created.id,
           status: "completed",
         };
       }
       case "activity": {
-        const { id: _id, vendor: _vendor, type, occurredAt, ...rest } =
-          payload.entity;
+        const {
+          id: _id,
+          vendor: _vendor,
+          type,
+          occurredAt,
+          ...rest
+        } = payload.entity;
         const created = await adapter.logActivity({
           occurredAt: occurredAt ?? now(),
           type: type ?? "other",
           ...rest,
         });
         return {
-          mirror: { data: created, entityId: created.id, entityType: "activity", op: "put" },
+          mirror: {
+            data: created,
+            entityId: created.id,
+            entityType: "activity",
+            op: "put",
+          },
           resultEntityId: created.id,
           status: "completed",
         };
@@ -183,16 +231,29 @@ export const createCRMOutboundWorker = (
         const { id: _id, vendor: _vendor, body, ...rest } = payload.entity;
         const created = await adapter.addNote({ body: body ?? "", ...rest });
         return {
-          mirror: { data: created, entityId: created.id, entityType: "note", op: "put" },
+          mirror: {
+            data: created,
+            entityId: created.id,
+            entityType: "note",
+            op: "put",
+          },
           resultEntityId: created.id,
           status: "completed",
         };
       }
       case "task": {
         const { id: _id, vendor: _vendor, subject, ...rest } = payload.entity;
-        const created = await adapter.createTask({ subject: subject ?? "", ...rest });
+        const created = await adapter.createTask({
+          subject: subject ?? "",
+          ...rest,
+        });
         return {
-          mirror: { data: created, entityId: created.id, entityType: "task", op: "put" },
+          mirror: {
+            data: created,
+            entityId: created.id,
+            entityType: "task",
+            op: "put",
+          },
           resultEntityId: created.id,
           status: "completed",
         };
@@ -210,19 +271,32 @@ export const createCRMOutboundWorker = (
         const { id: _id, vendor: _vendor, ...patch } = payload.entity;
         const updated = await adapter.updateContact(entityId, patch);
         return {
-          mirror: { data: updated, entityId: updated.id, entityType: "contact", op: "put" },
+          mirror: {
+            data: updated,
+            entityId: updated.id,
+            entityType: "contact",
+            op: "put",
+          },
           resultEntityId: updated.id,
           status: "completed",
         };
       }
       case "lead": {
         if (!adapter.capabilities.supportsLeads) {
-          return { reason: `${adapter.vendor} does not support leads`, status: "skipped" };
+          return {
+            reason: `${adapter.vendor} does not support leads`,
+            status: "skipped",
+          };
         }
         const { id: _id, vendor: _vendor, ...patch } = payload.entity;
         const updated = await adapter.updateLead(entityId, patch);
         return {
-          mirror: { data: updated, entityId: updated.id, entityType: "lead", op: "put" },
+          mirror: {
+            data: updated,
+            entityId: updated.id,
+            entityType: "lead",
+            op: "put",
+          },
           resultEntityId: updated.id,
           status: "completed",
         };
@@ -231,19 +305,32 @@ export const createCRMOutboundWorker = (
         const { id: _id, vendor: _vendor, ...patch } = payload.entity;
         const updated = await adapter.updateDeal(entityId, patch);
         return {
-          mirror: { data: updated, entityId: updated.id, entityType: "deal", op: "put" },
+          mirror: {
+            data: updated,
+            entityId: updated.id,
+            entityType: "deal",
+            op: "put",
+          },
           resultEntityId: updated.id,
           status: "completed",
         };
       }
       case "account": {
         if (!adapter.capabilities.supportsAccounts) {
-          return { reason: `${adapter.vendor} does not support accounts`, status: "skipped" };
+          return {
+            reason: `${adapter.vendor} does not support accounts`,
+            status: "skipped",
+          };
         }
         const { id: _id, vendor: _vendor, ...patch } = payload.entity;
         const updated = await adapter.updateAccount(entityId, patch);
         return {
-          mirror: { data: updated, entityId: updated.id, entityType: "account", op: "put" },
+          mirror: {
+            data: updated,
+            entityId: updated.id,
+            entityType: "account",
+            op: "put",
+          },
           resultEntityId: updated.id,
           status: "completed",
         };
@@ -252,7 +339,12 @@ export const createCRMOutboundWorker = (
         const { id: _id, vendor: _vendor, ...patch } = payload.entity;
         const updated = await adapter.updateActivity(entityId, patch);
         return {
-          mirror: { data: updated, entityId: updated.id, entityType: "activity", op: "put" },
+          mirror: {
+            data: updated,
+            entityId: updated.id,
+            entityType: "activity",
+            op: "put",
+          },
           resultEntityId: updated.id,
           status: "completed",
         };
@@ -261,7 +353,12 @@ export const createCRMOutboundWorker = (
         const { id: _id, vendor: _vendor, ...patch } = payload.entity;
         const updated = await adapter.updateNote(entityId, patch);
         return {
-          mirror: { data: updated, entityId: updated.id, entityType: "note", op: "put" },
+          mirror: {
+            data: updated,
+            entityId: updated.id,
+            entityType: "note",
+            op: "put",
+          },
           resultEntityId: updated.id,
           status: "completed",
         };
@@ -270,7 +367,12 @@ export const createCRMOutboundWorker = (
         const { id: _id, vendor: _vendor, ...patch } = payload.entity;
         const updated = await adapter.updateTask(entityId, patch);
         return {
-          mirror: { data: updated, entityId: updated.id, entityType: "task", op: "put" },
+          mirror: {
+            data: updated,
+            entityId: updated.id,
+            entityType: "task",
+            op: "put",
+          },
           resultEntityId: updated.id,
           status: "completed",
         };
@@ -284,7 +386,10 @@ export const createCRMOutboundWorker = (
   ): Promise<ExecResult> => {
     const entityId = requireId(payload, "outbound.delete");
     if (!adapter.capabilities.supportsDelete) {
-      return { reason: `${adapter.vendor} does not support deletion`, status: "skipped" };
+      return {
+        reason: `${adapter.vendor} does not support deletion`,
+        status: "skipped",
+      };
     }
     switch (payload.entityType) {
       case "contact":
@@ -310,7 +415,10 @@ export const createCRMOutboundWorker = (
         };
       case "account":
         if (!adapter.capabilities.supportsAccounts) {
-          return { reason: `${adapter.vendor} does not support accounts`, status: "skipped" };
+          return {
+            reason: `${adapter.vendor} does not support accounts`,
+            status: "skipped",
+          };
         }
         await adapter.deleteAccount(entityId);
         return {
@@ -350,15 +458,25 @@ export const createCRMOutboundWorker = (
         status: "skipped",
       };
     }
-    const { id: _id, vendor: _vendor, type, occurredAt, ...rest } =
-      payload.entity;
+    const {
+      id: _id,
+      vendor: _vendor,
+      type,
+      occurredAt,
+      ...rest
+    } = payload.entity;
     const created = await adapter.logActivity({
       occurredAt: occurredAt ?? now(),
       type: type ?? "other",
       ...rest,
     });
     return {
-      mirror: { data: created, entityId: created.id, entityType: "activity", op: "put" },
+      mirror: {
+        data: created,
+        entityId: created.id,
+        entityType: "activity",
+        op: "put",
+      },
       resultEntityId: created.id,
       status: "completed",
     };
@@ -441,9 +559,7 @@ export const createCRMOutboundWorker = (
     }
   };
 
-  const processPending = async (
-    limit = 50,
-  ): Promise<CRMOutboundResult[]> => {
+  const processPending = async (limit = 50): Promise<CRMOutboundResult[]> => {
     const out: CRMOutboundResult[] = [];
     for (let i = 0; i < limit; i += 1) {
       const job = await options.syncQueue.claimNext(now(), OUTBOUND_JOB_KINDS);

@@ -19,7 +19,9 @@ const make = (now = 10_000) => {
   return { localStore, reconciler, syncQueue };
 };
 
-const inboundChange = (overrides: Partial<CRMChangeEvent> = {}): CRMChangeEvent => ({
+const inboundChange = (
+  overrides: Partial<CRMChangeEvent> = {},
+): CRMChangeEvent => ({
   entityId: "c_1",
   entityType: "contact",
   id: "evt_1",

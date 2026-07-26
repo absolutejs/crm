@@ -103,10 +103,7 @@ export const createPostgresCRMLocalEntityStore = async (
       }
       const where =
         conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-      const rows = await query<Row>(
-        `SELECT * FROM ${table} ${where}`,
-        params,
-      );
+      const rows = await query<Row>(`SELECT * FROM ${table} ${where}`, params);
       return rows.map(rowToRecord);
     },
     async put(record) {

@@ -32,7 +32,11 @@ describe("createCRMOutboundWorker", () => {
       maxAttempts: 3,
       notBeforeMs: 0,
       payload: {
-        entity: { emails: [{ address: "a@b.com" }], firstName: "Alex", phones: [] },
+        entity: {
+          emails: [{ address: "a@b.com" }],
+          firstName: "Alex",
+          phones: [],
+        },
         entityType: "contact",
       },
       userId: "u",

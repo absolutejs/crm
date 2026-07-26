@@ -18,14 +18,18 @@ export type CRMHttpClient = <T = unknown>(
   request: CRMHttpRequest,
 ) => Promise<CRMHttpResponse<T>>;
 
-export const createFetchCRMHttpClient = (): CRMHttpClient =>
+export const createFetchCRMHttpClient =
+  (): CRMHttpClient =>
   async <T = unknown>(request: CRMHttpRequest): Promise<CRMHttpResponse<T>> => {
     const init: RequestInit = {
       headers: request.headers,
       method: request.method,
     };
     if (request.body !== undefined && request.body !== null) {
-      if (request.body instanceof URLSearchParams || typeof request.body === "string") {
+      if (
+        request.body instanceof URLSearchParams ||
+        typeof request.body === "string"
+      ) {
         init.body = request.body;
       } else {
         init.body = JSON.stringify(request.body);

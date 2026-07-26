@@ -68,7 +68,8 @@ export const createInMemoryCRMLocalEntityStore = (
       const out: CRMLocalEntityRecord[] = [];
       for (const record of store.values()) {
         if (filter?.vendor && record.vendor !== filter.vendor) continue;
-        if (filter?.entityType && record.entityType !== filter.entityType) continue;
+        if (filter?.entityType && record.entityType !== filter.entityType)
+          continue;
         if (
           filter?.sinceMs !== undefined &&
           record.localUpdatedAt < filter.sinceMs

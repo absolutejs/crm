@@ -59,7 +59,8 @@ export const normalizePipedriveWebhookPayload: CRMWebhookNormalizer = ({
 }) => {
   const body = parsed as PipedriveWebhookPayload | undefined;
   if (!body?.meta) return [];
-  const entityType = PIPEDRIVE_ENTITY_MAP[body.meta.entity ?? body.meta.object ?? ""];
+  const entityType =
+    PIPEDRIVE_ENTITY_MAP[body.meta.entity ?? body.meta.object ?? ""];
   if (!entityType) return [];
   const entityId = body.meta.id !== undefined ? String(body.meta.id) : "";
   if (!entityId) return [];

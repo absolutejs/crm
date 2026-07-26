@@ -11,7 +11,14 @@ import type {
 type CloseWebhookEvent = {
   event?: {
     id?: string;
-    object_type?: "contact" | "lead" | "opportunity" | "activity" | "note" | "task" | string;
+    object_type?:
+      | "contact"
+      | "lead"
+      | "opportunity"
+      | "activity"
+      | "note"
+      | "task"
+      | string;
     object_id?: string;
     action?: "created" | "updated" | "deleted" | string;
     date_created?: string;
@@ -44,11 +51,7 @@ export const verifyCloseWebhookSignature: CRMWebhookSignatureVerifier = ({
   secret,
 }) => {
   if (!secret) return false;
-  const signature = headerValue(
-    headers,
-    "close-sig-hash",
-    "x-close-signature",
-  );
+  const signature = headerValue(headers, "close-sig-hash", "x-close-signature");
   const timestamp = headerValue(
     headers,
     "close-sig-timestamp",

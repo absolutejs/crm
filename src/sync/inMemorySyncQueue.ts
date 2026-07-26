@@ -15,7 +15,10 @@ export type CreateInMemoryCRMSyncQueueOptions = {
 
 const cloneJob = (job: CRMSyncJob): CRMSyncJob => ({
   ...job,
-  payload: { ...job.payload, entity: { ...job.payload.entity } } as CRMSyncJob["payload"],
+  payload: {
+    ...job.payload,
+    entity: { ...job.payload.entity },
+  } as CRMSyncJob["payload"],
 });
 
 export const createInMemoryCRMSyncQueue = (
@@ -39,7 +42,8 @@ export const createInMemoryCRMSyncQueue = (
     async cancel(jobId) {
       const job = jobs.get(jobId);
       if (!job) return false;
-      if (job.status === "completed" || job.status === "cancelled") return false;
+      if (job.status === "completed" || job.status === "cancelled")
+        return false;
       job.status = "cancelled";
       notify(job);
       return true;
