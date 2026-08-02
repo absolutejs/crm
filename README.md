@@ -2,7 +2,7 @@
 
 Multi-vendor CRM adapter framework for the AbsoluteJS stack.
 
-> **Status: alpha.** API surface is in flux. Targeting `0.1.0` once all 9 vendor adapters and bidirectional sync ship.
+> **Status: alpha.** Pin an exact version while the API approaches 1.0.
 
 ## What it is
 
@@ -14,18 +14,38 @@ A unified CRM contract (`CRMAdapter`) plus vendor adapters for the major CRMs, d
 - **Bidirectional-ready** — outbound mutations + inbound webhook intake are plumbed through the same queue from day one. v1 ships push-at-call-end + on-demand pull; v2 activates full sync via config.
 - **Voice-aware** — drop-in bridge to `@absolutejs/voice` agents via `VoiceCRMContract`. Lead-capture and disposition-logging pathway templates included.
 
-## Vendor coverage roadmap
+## Vendor coverage
 
-| Vendor      | Status  | Auth                   | Adapter | Webhooks |
-| ----------- | ------- | ---------------------- | ------- | -------- |
-| Salesforce  | planned | citra (shipped)        | TBD     | TBD      |
-| HubSpot     | planned | citra (shipped 0.26.0) | TBD     | TBD      |
-| Pipedrive   | planned | citra (pending)        | TBD     | TBD      |
-| Zoho CRM    | planned | citra (pending)        | TBD     | TBD      |
-| Attio       | planned | citra (pending)        | TBD     | TBD      |
-| Close       | planned | citra (pending)        | TBD     | TBD      |
-| monday CRM  | planned | citra (pending)        | TBD     | TBD      |
-| GoHighLevel | planned | citra (pending)        | TBD     | TBD      |
+| Vendor      | Status  | Auth  | Adapter | Webhooks |
+| ----------- | ------- | ----- | ------- | -------- |
+| Salesforce  | shipped | citra | shipped | shipped  |
+| HubSpot     | shipped | citra | shipped | shipped  |
+| Pipedrive   | shipped | citra | shipped | shipped  |
+| Zoho CRM    | shipped | citra | shipped | shipped  |
+| Attio       | shipped | citra | shipped | shipped  |
+| Close       | shipped | citra | shipped | shipped  |
+| monday CRM  | shipped | citra | shipped | shipped  |
+| GoHighLevel | shipped | citra | shipped | shipped  |
+
+## Installation
+
+```sh
+bun add @absolutejs/crm
+```
+
+## Quick start
+
+```ts
+import {
+  createInMemoryCRMSyncQueue,
+  createInMemoryCRMTokenStore,
+} from "@absolutejs/crm";
+
+const tokenStore = createInMemoryCRMTokenStore();
+const syncQueue = createInMemoryCRMSyncQueue();
+```
+
+The package exports all eight adapter factories from its root, plus OAuth handlers, signed webhook receivers, in-memory and durable stores, reconciliation workers, and the voice CRM bridge.
 
 ## Design
 
