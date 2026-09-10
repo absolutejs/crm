@@ -16,9 +16,11 @@
   "author": "Alex Kahn",
   "type": "module",
   "files": [
-    "dist",
+    "CHANGELOG.md",
+    "LICENSE",
     "README.md",
-    "LICENSE"
+    "changelog.json",
+    "dist"
   ],
   "exports": {
     ".": {
@@ -39,7 +41,7 @@
     "typecheck": "bun run tsc --noEmit",
     "format": "prettier --write \"./**/*.{js,ts,json,md}\"",
     "verify-package": "absolute-manifest verify-package",
-    "check:package": "bun run format && bun run typecheck && bun run test && bun run verify-package && bun run build && bun run verify-package --artifacts",
+    "check:package": "bun run format && bun run typecheck && bun run test && bun run verify-package && bun run build && absolute-changelog check",
     "release": "bun run check:package && npm publish --access public --tag alpha"
   },
   "keywords": [
@@ -68,7 +70,8 @@
     }
   },
   "devDependencies": {
-    "@absolutejs/absolute": "0.19.0-beta.1115",
+    "@absolutejs/absolute": "0.20.0-beta.0",
+    "@absolutejs/changelog": "^0.1.2",
     "@absolutejs/voice": "0.0.22-beta.647",
     "@hubspot/api-client": "14.0.1",
     "@types/bun": "1.3.14",
@@ -78,47 +81,11 @@
     "typescript": "5.9.3"
   },
   "dependencies": {
-    "@absolutejs/manifest": "0.7.2",
+    "@absolutejs/manifest": "0.9.0",
     "@sinclair/typebox": "0.34.52"
   },
   "absolutejs": {
-    "manifestContract": 2,
-    "runtimePeers": {
-      "@absolutejs/voice": {
-        "artifactImports": [],
-        "buildExternals": [
-          "@absolutejs/voice",
-          "@absolutejs/voice/*"
-        ],
-        "optional": true,
-        "range": ">=0.0.22-beta.643 <0.1",
-        "tested": "0.0.22-beta.647"
-      },
-      "@hubspot/api-client": {
-        "artifactImports": [
-          "@hubspot/api-client"
-        ],
-        "buildExternals": [
-          "@hubspot/api-client",
-          "@hubspot/api-client/*"
-        ],
-        "optional": true,
-        "range": ">=12 <15",
-        "tested": "14.0.1"
-      },
-      "jsforce": {
-        "artifactImports": [
-          "jsforce"
-        ],
-        "buildExternals": [
-          "jsforce",
-          "jsforce/*"
-        ],
-        "optional": true,
-        "range": ">=3 <4",
-        "tested": "3.10.19"
-      }
-    }
+    "manifestContract": 2
   },
   "publishConfig": {
     "access": "public"
