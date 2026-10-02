@@ -180,3 +180,10 @@ export type {
   CRMWebhookVendorConfig,
   GetCRMAdapterForUserOptions,
 } from "./auth";
+
+export {
+  verifyHubSpotAppRequest,
+  uninstallHubSpotApp,
+} from "./auth/hubspotApp";
+export type { HubSpotAppContext } from "./auth/hubspotApp";
+export { exportCRMContacts } from "./contactExport";

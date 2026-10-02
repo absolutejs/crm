@@ -1,5 +1,24 @@
 {
 	"contract": 1,
 	"name": "@absolutejs/crm",
-	"releases": []
+	"releases": [
+		{
+			"changes": [
+				{
+					"kind": "changed",
+					"summary": "HubSpot webhook event ids are now a SHA-256 of the app, portal, subscription and event identifiers instead of hs:<eventId>. Deduplication keys stored before this release will not match new events. HubSpot privacy deletions are treated as deletes, and malformed entries in a batch are skipped instead of failing it."
+				},
+				{
+					"kind": "security",
+					"summary": "HubSpot webhook signatures are compared in constant time, timestamps must be integers within the allowed window in either direction, and the request URI is decoded the way HubSpot signs it."
+				},
+				{
+					"kind": "added",
+					"summary": "verifyHubSpotAppRequest and uninstallHubSpotApp (with the HubSpotAppContext type) verify signed HubSpot app requests and handle app uninstalls. exportCRMContacts exports contacts from a CRM adapter."
+				}
+			],
+			"date": "2026-10-02",
+			"version": "0.0.10-alpha.11"
+		}
+	]
 }

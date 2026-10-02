@@ -95,3 +95,5 @@ export {
   verifyGoHighLevelWebhookSignature,
 } from "./gohighlevelWebhook";
 export type { CreateGoHighLevelCRMWebhookConfigOptions } from "./gohighlevelWebhook";
+export { verifyHubSpotAppRequest, uninstallHubSpotApp } from "./hubspotApp";
+export type { HubSpotAppContext } from "./hubspotApp";

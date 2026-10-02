@@ -152,3 +152,69 @@ describe("createHubSpotCRMWebhookConfig + receiver", () => {
     expect(fired).toEqual(["42"]);
   });
 });
+
+test("rejects a correctly signed future timestamp and malformed signatures", async () => {
+  const headers = signedHeaders("[]");
+  headers["x-hubspot-request-timestamp"] = String(Date.now() + 600_000);
+  headers["x-hubspot-signature-v3"] = createHmac("sha256", SECRET)
+    .update(`POST/webhooks/hubspot[]${headers["x-hubspot-request-timestamp"]}`)
+    .digest("base64");
+  expect(
+    await verifyHubSpotWebhookV3Signature({
+      headers,
+      rawBody: "[]",
+      secret: SECRET,
+    }),
+  ).toBe(false);
+  headers["x-hubspot-request-timestamp"] = String(Date.now());
+  headers["x-hubspot-signature-v3"] = "short";
+  expect(
+    await verifyHubSpotWebhookV3Signature({
+      headers,
+      rawBody: "[]",
+      secret: SECRET,
+    }),
+  ).toBe(false);
+});
+test("retries keep identity while portal and property collisions do not", async () => {
+  const normalize = (entry: Record<string, unknown>, receivedAtMs: number) =>
+    normalizeHubSpotWebhookPayload({
+      parsed: [entry],
+      rawBody: "",
+      headers: {},
+      receivedAtMs,
+    });
+  const base = {
+    eventId: 1,
+    portalId: 12,
+    objectId: 2,
+    subscriptionType: "contact.propertyChange",
+    propertyName: "email",
+    propertyValue: "a@b.test",
+  };
+  const first = await normalize(base, 1);
+  expect((await normalize({ ...base, attemptNumber: 2 }, 999))[0]?.id).toBe(
+    first[0]?.id,
+  );
+  expect((await normalize({ ...base, portalId: 13 }, 1))[0]?.id).not.toBe(
+    first[0]?.id,
+  );
+  expect(
+    (await normalize({ ...base, propertyName: "firstname" }, 1))[0]?.id,
+  ).not.toBe(first[0]?.id);
+});
+test("privacy deletions are deletes and malformed entries do not crash a batch", async () => {
+  const events = await normalizeHubSpotWebhookPayload({
+    parsed: [
+      null,
+      {},
+      { subscriptionType: 1 },
+      { objectId: 2, subscriptionType: "contact.privacyDeletion" },
+    ],
+    rawBody: "",
+    headers: {},
+    receivedAtMs: 1,
+  });
+  expect(events).toHaveLength(1);
+  expect(events[0]?.op).toBe("delete");
+});
